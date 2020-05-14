@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 import org.apache.geode.cache.Region;
@@ -32,6 +33,7 @@ import org.apache.geode.redis.internal.executor.set.RedisSetInRegion;
 import org.apache.geode.redis.internal.executor.set.SingleResultCollector;
 import org.apache.geode.redis.internal.executor.set.StripedExecutor;
 import org.apache.geode.redis.internal.executor.set.SynchronizedStripedExecutor;
+import org.apache.geode.redis.internal.executor.string.RedisString;
 
 @SuppressWarnings("unchecked")
 public class CommandFunction extends SingleResultRedisFunction {
@@ -52,7 +54,7 @@ public class CommandFunction extends SingleResultRedisFunction {
     FunctionService
         .onRegion(region)
         .withFilter(Collections.singleton(key))
-        .setArguments(new Object[] {command, commandArguments})
+        .setArguments(new Object[]{command, commandArguments})
         .withCollector(rc)
         .execute(CommandFunction.ID)
         .getResult();
@@ -71,9 +73,15 @@ public class CommandFunction extends SingleResultRedisFunction {
 
   @Override
   protected Object compute(Region localRegion, ByteArrayWrapper key,
-      RedisCommandType command, Object[] args) {
+                           RedisCommandType command, Object[] args) {
     Callable<Object> callable;
     switch (command) {
+      case APPEND: {
+        ByteArrayWrapper valueToAdd = (ByteArrayWrapper) args[1];
+        callable = () -> {
+          new RedisString.append(key, valueToAdd);
+        };
+      }
       case SADD: {
         ArrayList<ByteArrayWrapper> membersToAdd = (ArrayList<ByteArrayWrapper>) args[1];
         callable = () -> new RedisSetInRegion(localRegion).sadd(key, membersToAdd);
@@ -141,7 +149,7 @@ public class CommandFunction extends SingleResultRedisFunction {
 
 
   private Callable<Object> executeDel(ByteArrayWrapper key, Region localRegion,
-      RedisDataType delType) {
+                                      RedisDataType delType) {
     switch (delType) {
       case REDIS_SET:
         return () -> new RedisSetInRegion(localRegion).del(key);

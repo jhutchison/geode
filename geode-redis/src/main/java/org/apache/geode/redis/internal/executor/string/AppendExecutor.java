@@ -31,7 +31,8 @@ public class AppendExecutor extends StringExecutor {
   public void executeCommand(Command command, ExecutionHandlerContext context) {
     List<byte[]> commandElems = command.getProcessedCommand();
 
-    Region<ByteArrayWrapper, ByteArrayWrapper> r = context.getRegionProvider().getStringsRegion();
+    Region<ByteArrayWrapper, ByteArrayWrapper> region =
+        context.getRegionProvider().getStringsRegion();
 
     if (commandElems.size() < 3) {
       command.setResponse(Coder.getErrorResponse(context.getByteBufAllocator(), ArityDef.APPEND));
@@ -40,17 +41,17 @@ public class AppendExecutor extends StringExecutor {
 
     ByteArrayWrapper key = command.getKey();
     checkAndSetDataType(key, context);
-    ByteArrayWrapper string = r.get(key);
+    ByteArrayWrapper value = region.get(key);
 
     byte[] stringByteArray = commandElems.get(VALUE_INDEX);
-    if (string == null) {
-      r.put(key, new ByteArrayWrapper(stringByteArray));
+    if (value == null) {
+      region.put(key, new ByteArrayWrapper(stringByteArray));
       command.setResponse(
           Coder.getIntegerResponse(context.getByteBufAllocator(), stringByteArray.length));
     } else {
-      byte[] newValue = concatArrays(string.toBytes(), stringByteArray);
-      string.setBytes(newValue);
-      r.put(key, string);
+      byte[] newValue = concatArrays(value.toBytes(), stringByteArray);
+      value.setBytes(newValue);
+      region.put(key, value);
       command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), newValue.length));
     }
 
