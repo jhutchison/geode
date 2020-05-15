@@ -34,6 +34,8 @@ public class RedisString implements DataSerializable {
     this.value = value;
   }
 
+
+
   // for serialization
   public RedisString() {
   }
@@ -54,8 +56,8 @@ public class RedisString implements DataSerializable {
     return value.length();
   }
 
-  public String getValue() {
-    return value.toString();
+  public ByteArrayWrapper getValue() {
+    return value;
   }
 
 
