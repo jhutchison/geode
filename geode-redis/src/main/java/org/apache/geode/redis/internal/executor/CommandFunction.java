@@ -51,15 +51,16 @@ public class CommandFunction extends SingleResultRedisFunction {
   public static <T> T execute(RedisCommandType command,
       ByteArrayWrapper key,
       Object commandArguments, Region<ByteArrayWrapper, RedisData> region) {
-    SingleResultCollector<T> rc = new SingleResultCollector<>();
+    SingleResultCollector<T> resultsCollector = new SingleResultCollector<>();
     FunctionService
         .onRegion(region)
         .withFilter(Collections.singleton(key))
         .setArguments(new Object[] {command, commandArguments})
-        .withCollector(rc)
+        .withCollector(resultsCollector)
         .execute(CommandFunction.ID)
         .getResult();
-    return rc.getResult();
+
+    return resultsCollector.getResult();
   }
 
 
