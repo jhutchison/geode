@@ -21,7 +21,6 @@ import java.io.IOException;
 
 import org.apache.geode.DataSerializable;
 import org.apache.geode.DataSerializer;
-import org.apache.geode.Delta;
 import org.apache.geode.cache.Region;
 import org.apache.geode.redis.internal.ByteArrayWrapper;
 
@@ -35,11 +34,10 @@ public class RedisString implements DataSerializable {
   }
 
   // for serialization
-  public RedisString() {
-  }
+  public RedisString() {}
 
   public int append(ByteArrayWrapper appendValue, Region<ByteArrayWrapper, RedisString> region,
-                    ByteArrayWrapper key) {
+      ByteArrayWrapper key) {
 
     RedisString redisString = region.get(key);
 
@@ -58,9 +56,17 @@ public class RedisString implements DataSerializable {
     return region.get(key).getValue();
   }
 
-  public RedisString set(ByteArrayWrapper value, Region<ByteArrayWrapper, RedisString> region, ByteArrayWrapper key) {
+  public RedisString set(ByteArrayWrapper value, Region<ByteArrayWrapper, RedisString> region,
+      ByteArrayWrapper key) {
     this.value = value;
     return region.put(key, this);
+  }
+
+  public Boolean setnx(ByteArrayWrapper key, Region<ByteArrayWrapper, RedisString> region,
+      ByteArrayWrapper value) {
+    this.value = value;
+    RedisString redisString = region.putIfAbsent(key, this);
+    return redisString == null;
   }
 
   public ByteArrayWrapper getValue() {

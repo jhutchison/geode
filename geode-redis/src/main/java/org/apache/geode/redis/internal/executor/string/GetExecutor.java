@@ -38,10 +38,10 @@ public class GetExecutor extends StringExecutor {
 
     Object value = CommandFunction.execute(GET, key, null, region);
 
-    if (value instanceof ByteArrayWrapper){
+    if (value instanceof ByteArrayWrapper) {
       valueAsBytes = (ByteArrayWrapper) value;
-    }else if (value instanceof RedisString){
-     valueAsBytes = ((RedisString) value).getValue();
+    } else if (value instanceof RedisString) {
+      valueAsBytes = ((RedisString) value).getValue();
     }
 
     respondBulkStrings(command, context, valueAsBytes);

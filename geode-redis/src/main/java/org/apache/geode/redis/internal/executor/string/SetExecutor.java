@@ -14,8 +14,8 @@
  */
 package org.apache.geode.redis.internal.executor.string;
 
-import static org.apache.geode.redis.internal.RedisCommandType.APPEND;
 import static org.apache.geode.redis.internal.RedisCommandType.SET;
+import static org.apache.geode.redis.internal.RedisCommandType.SETNX;
 import static org.apache.geode.redis.internal.RedisConstants.ERROR_INVALID_EXPIRE_TIME;
 import static org.apache.geode.redis.internal.RedisConstants.ERROR_NOT_INTEGER;
 import static org.apache.geode.redis.internal.RedisConstants.ERROR_SYNTAX;
@@ -27,7 +27,6 @@ import org.apache.geode.redis.internal.ByteArrayWrapper;
 import org.apache.geode.redis.internal.Coder;
 import org.apache.geode.redis.internal.Command;
 import org.apache.geode.redis.internal.ExecutionHandlerContext;
-import org.apache.geode.redis.internal.RedisConstants.ArityDef;
 import org.apache.geode.redis.internal.RedisDataType;
 import org.apache.geode.redis.internal.RedisDataTypeMismatchException;
 import org.apache.geode.redis.internal.executor.AbstractExecutor;
@@ -58,29 +57,33 @@ public class SetExecutor extends StringExecutor {
     Region<ByteArrayWrapper, ByteArrayWrapper> region =
         context.getRegionProvider().getStringsRegion();
 
+    String parseError = parseCommandElems(commandElems);
+    if (parseError != null) {
+      command.setResponse(Coder.getErrorResponse(context.getByteBufAllocator(), parseError));
+      return;
+    }
+
+    if (NX) {
+      if (CommandFunction.execute(SETNX, key, value, region)) {
+        command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
+      } else {
+        command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
+      }
+      return;
+    }
+    //
+    // if (XX) {
+    // setXX(region, command, key, value, context);
+    // return;
+    // }
+    //
     try {
       RedisString redisString = CommandFunction.execute(SET, key, value, region);
       command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
     } catch (Exception e) {
       command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), null));
+
     }
-//    String parseError = parseCommandElems(commandElems);
-//    if (parseError != null) {
-//      command.setResponse(Coder.getErrorResponse(context.getByteBufAllocator(), parseError));
-//      return;
-//    }
-//
-//    if (NX) {
-//      setNX(region, command, key, value, context);
-//      return;
-//    }
-//
-//    if (XX) {
-//      setXX(region, command, key, value, context);
-//      return;
-//    }
-//
-//    set(command, context, region, key, value);
   }
 
   private ByteArrayWrapper getValue(List<byte[]> commandElems) {

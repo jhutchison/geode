@@ -57,4 +57,8 @@ public class RedisStringInRegion implements RedisStringCommands {
     }
     return redisString.set(value, region, key);
   }
+
+  public Boolean setnx(ByteArrayWrapper key, ByteArrayWrapper value) {
+    return new RedisString().setnx(key, region, value);
+  }
 }
