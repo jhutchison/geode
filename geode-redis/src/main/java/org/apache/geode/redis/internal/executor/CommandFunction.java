@@ -34,6 +34,7 @@ import org.apache.geode.redis.internal.executor.set.SingleResultCollector;
 import org.apache.geode.redis.internal.executor.set.StripedExecutor;
 import org.apache.geode.redis.internal.executor.set.SynchronizedStripedExecutor;
 import org.apache.geode.redis.internal.executor.string.RedisString;
+import org.apache.geode.redis.internal.executor.string.RedisStringInRegion;
 
 @SuppressWarnings("unchecked")
 public class CommandFunction extends SingleResultRedisFunction {
@@ -54,7 +55,7 @@ public class CommandFunction extends SingleResultRedisFunction {
     FunctionService
         .onRegion(region)
         .withFilter(Collections.singleton(key))
-        .setArguments(new Object[]{command, commandArguments})
+        .setArguments(new Object[] {command, commandArguments})
         .withCollector(rc)
         .execute(CommandFunction.ID)
         .getResult();
@@ -73,14 +74,13 @@ public class CommandFunction extends SingleResultRedisFunction {
 
   @Override
   protected Object compute(Region localRegion, ByteArrayWrapper key,
-                           RedisCommandType command, Object[] args) {
+      RedisCommandType command, Object[] args) {
     Callable<Object> callable;
     switch (command) {
       case APPEND: {
         ByteArrayWrapper valueToAdd = (ByteArrayWrapper) args[1];
-        callable = () -> {
-          new RedisString.append(key, valueToAdd);
-        };
+        callable = () -> new RedisStringInRegion(localRegion).append(key, valueToAdd);
+        break;
       }
       case SADD: {
         ArrayList<ByteArrayWrapper> membersToAdd = (ArrayList<ByteArrayWrapper>) args[1];

@@ -14,6 +14,9 @@
  */
 package org.apache.geode.redis.internal.executor.string;
 
+import static org.apache.geode.redis.internal.RedisCommandType.APPEND;
+import static org.apache.geode.redis.internal.RedisCommandType.SMEMBERS;
+
 import java.util.List;
 
 import org.apache.geode.cache.Region;
@@ -22,6 +25,7 @@ import org.apache.geode.redis.internal.Coder;
 import org.apache.geode.redis.internal.Command;
 import org.apache.geode.redis.internal.ExecutionHandlerContext;
 import org.apache.geode.redis.internal.RedisConstants.ArityDef;
+import org.apache.geode.redis.internal.executor.CommandFunction;
 
 public class AppendExecutor extends StringExecutor {
 
@@ -34,36 +38,14 @@ public class AppendExecutor extends StringExecutor {
     Region<ByteArrayWrapper, ByteArrayWrapper> region =
         context.getRegionProvider().getStringsRegion();
 
-    if (commandElems.size() < 3) {
-      command.setResponse(Coder.getErrorResponse(context.getByteBufAllocator(), ArityDef.APPEND));
-      return;
-    }
-
     ByteArrayWrapper key = command.getKey();
     checkAndSetDataType(key, context);
-    ByteArrayWrapper value = region.get(key);
+    byte[] bytesToAppend = commandElems.get(VALUE_INDEX);
+    ByteArrayWrapper valueToAppend = new ByteArrayWrapper(bytesToAppend);
+    // TODO: a RedisStringCommandsFunctionExecutor?
+    Long returnValue = CommandFunction.execute(APPEND, key, valueToAppend, region);
 
-    byte[] stringByteArray = commandElems.get(VALUE_INDEX);
-    if (value == null) {
-      region.put(key, new ByteArrayWrapper(stringByteArray));
-      command.setResponse(
-          Coder.getIntegerResponse(context.getByteBufAllocator(), stringByteArray.length));
-    } else {
-      byte[] newValue = concatArrays(value.toBytes(), stringByteArray);
-      value.setBytes(newValue);
-      region.put(key, value);
-      command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), newValue.length));
-    }
-
-  }
-
-  private byte[] concatArrays(byte[] o, byte[] n) {
-    int oLen = o.length;
-    int nLen = n.length;
-    byte[] combined = new byte[oLen + nLen];
-    System.arraycopy(o, 0, combined, 0, oLen);
-    System.arraycopy(n, 0, combined, oLen, nLen);
-    return combined;
+    command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), returnValue));
   }
 
 }

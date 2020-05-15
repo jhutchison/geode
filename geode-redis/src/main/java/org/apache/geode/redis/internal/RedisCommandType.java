@@ -178,7 +178,7 @@ public enum RedisCommandType {
    ************** Strings ****************
    ***************************************/
 
-  APPEND(new AppendExecutor()),
+  APPEND(new AppendExecutor(), new ExactParameterRequirements(3)),
   BITCOUNT(new BitCountExecutor()),
   BITOP(new BitOpExecutor()),
   BITPOS(new BitPosExecutor()),
