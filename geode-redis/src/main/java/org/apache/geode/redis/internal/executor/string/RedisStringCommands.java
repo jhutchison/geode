@@ -18,4 +18,6 @@ import org.apache.geode.redis.internal.ByteArrayWrapper;
 
 public interface RedisStringCommands {
   long append(ByteArrayWrapper key, ByteArrayWrapper valueToAppend);
+  ByteArrayWrapper get(ByteArrayWrapper key);
+  RedisString set(ByteArrayWrapper key, ByteArrayWrapper value);
 }

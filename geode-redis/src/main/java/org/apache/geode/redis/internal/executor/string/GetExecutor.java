@@ -14,24 +14,19 @@
  */
 package org.apache.geode.redis.internal.executor.string;
 
+import static org.apache.geode.redis.internal.RedisCommandType.GET;
+
 import org.apache.geode.cache.Region;
 import org.apache.geode.redis.internal.ByteArrayWrapper;
-import org.apache.geode.redis.internal.Coder;
 import org.apache.geode.redis.internal.Command;
 import org.apache.geode.redis.internal.ExecutionHandlerContext;
-import org.apache.geode.redis.internal.RedisConstants.ArityDef;
 import org.apache.geode.redis.internal.RedisDataType;
+import org.apache.geode.redis.internal.executor.CommandFunction;
 
 public class GetExecutor extends StringExecutor {
 
   @Override
   public void executeCommand(Command command, ExecutionHandlerContext context) {
-
-    if (command.getProcessedCommand().size() != 2) {
-      command
-          .setResponse(Coder.getErrorResponse(context.getByteBufAllocator(), ArityDef.GETEXECUTOR));
-      return;
-    }
 
     ByteArrayWrapper key = command.getKey();
     checkDataType(key, RedisDataType.REDIS_STRING, context);
@@ -41,14 +36,13 @@ public class GetExecutor extends StringExecutor {
 
     ByteArrayWrapper valueAsBytes = null;
 
-    Object value =  region.get(key);
+    Object value = CommandFunction.execute(GET, key, null, region);
 
     if (value instanceof ByteArrayWrapper){
       valueAsBytes = (ByteArrayWrapper) value;
     }else if (value instanceof RedisString){
      valueAsBytes = ((RedisString) value).getValue();
     }
-
 
     respondBulkStrings(command, context, valueAsBytes);
   }

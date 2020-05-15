@@ -36,4 +36,25 @@ public class RedisStringInRegion implements RedisStringCommands {
       return valueToAppend.length();
     }
   }
+
+  @Override
+  public ByteArrayWrapper get(ByteArrayWrapper key) {
+    RedisString redisString = region.get(key);
+
+    if (redisString != null) {
+      return redisString.get(region, key);
+    } else {
+      return null;
+    }
+  }
+
+  @Override
+  public RedisString set(ByteArrayWrapper key, ByteArrayWrapper value) {
+    RedisString redisString = region.get(key);
+
+    if (redisString == null) {
+      region.create(key, new RedisString(value));
+    }
+    return redisString.set(value, region, key);
+  }
 }
