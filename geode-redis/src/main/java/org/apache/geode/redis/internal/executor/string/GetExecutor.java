@@ -38,9 +38,19 @@ public class GetExecutor extends StringExecutor {
 
     Region<ByteArrayWrapper, ByteArrayWrapper> region =
         context.getRegionProvider().getStringsRegion();
-    ByteArrayWrapper wrapper = region.get(key);
 
-    respondBulkStrings(command, context, wrapper);
+    ByteArrayWrapper valueAsBytes = null;
+
+    Object value =  region.get(key);
+
+    if (value instanceof ByteArrayWrapper){
+      valueAsBytes = (ByteArrayWrapper) value;
+    }else if (value instanceof RedisString){
+     valueAsBytes = ((RedisString) value).getValue();
+    }
+
+
+    respondBulkStrings(command, context, valueAsBytes);
   }
 
 }
