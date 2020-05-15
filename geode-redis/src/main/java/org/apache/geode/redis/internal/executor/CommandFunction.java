@@ -33,6 +33,7 @@ import org.apache.geode.redis.internal.executor.set.SingleResultCollector;
 import org.apache.geode.redis.internal.executor.set.StripedExecutor;
 import org.apache.geode.redis.internal.executor.set.SynchronizedStripedExecutor;
 import org.apache.geode.redis.internal.executor.string.RedisString;
+import org.apache.geode.redis.internal.executor.string.RedisStringInRegion;
 
 @SuppressWarnings("unchecked")
 public class CommandFunction extends SingleResultRedisFunction {
@@ -48,13 +49,13 @@ public class CommandFunction extends SingleResultRedisFunction {
 
   @SuppressWarnings("unchecked")
   public static <T> T execute(RedisCommandType command,
-                              ByteArrayWrapper key,
-                              Object commandArguments, Region region) {
+      ByteArrayWrapper key,
+      Object commandArguments, Region region) {
     SingleResultCollector<T> rc = new SingleResultCollector<>();
     FunctionService
         .onRegion(region)
         .withFilter(Collections.singleton(key))
-        .setArguments(new Object[]{command, commandArguments})
+        .setArguments(new Object[] {command, commandArguments})
         .withCollector(rc)
         .execute(CommandFunction.ID)
         .getResult();
@@ -73,14 +74,13 @@ public class CommandFunction extends SingleResultRedisFunction {
 
   @Override
   protected Object compute(Region localRegion, ByteArrayWrapper key,
-                           RedisCommandType command, Object[] args) {
+      RedisCommandType command, Object[] args) {
     Callable<Object> callable;
     switch (command) {
       case APPEND: {
         ByteArrayWrapper valueToAdd = (ByteArrayWrapper) args[1];
-        callable = () -> {
-          new RedisString.append(key, valueToAdd);
-        };
+        callable = () -> new RedisStringInRegion(localRegion).append(key, valueToAdd);
+        break;
       }
       case SADD: {
         ArrayList<ByteArrayWrapper> membersToAdd = (ArrayList<ByteArrayWrapper>) args[1];
@@ -92,7 +92,7 @@ public class CommandFunction extends SingleResultRedisFunction {
         callable = () -> {
           AtomicBoolean setWasDeleted = new AtomicBoolean();
           long srem = new RedisSetInRegion(localRegion).srem(key, membersToRemove, setWasDeleted);
-          return new Object[]{srem, setWasDeleted.get()};
+          return new Object[] {srem, setWasDeleted.get()};
         };
         break;
       }
@@ -154,7 +154,7 @@ public class CommandFunction extends SingleResultRedisFunction {
 
   @SuppressWarnings("unchecked")
   private Callable<Object> executeDel(ByteArrayWrapper key, Region localRegion,
-                                      RedisDataType delType) {
+      RedisDataType delType) {
     switch (delType) {
       case REDIS_SET:
         return () -> new RedisSetInRegion(localRegion).del(key);

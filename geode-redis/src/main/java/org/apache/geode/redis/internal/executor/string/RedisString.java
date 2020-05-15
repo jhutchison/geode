@@ -15,20 +15,66 @@
 
 package org.apache.geode.redis.internal.executor.string;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+import org.apache.geode.DataSerializable;
+import org.apache.geode.DataSerializer;
+import org.apache.geode.Delta;
 import org.apache.geode.cache.Region;
 import org.apache.geode.redis.internal.ByteArrayWrapper;
 
-public class RedisString {
+public class RedisString implements DataSerializable {
+  private ByteArrayWrapper value;
 
-  private final Region<ByteArrayWrapper, RedisString> region;
+  // TODO: deltas
 
-  public RedisString(
-      Region<ByteArrayWrapper, RedisString> region) {
-    this.region = region;
+  public RedisString(ByteArrayWrapper value) {
+    this.value = value;
   }
 
-  public int append(ByteArrayWrapper value){
-    return 0;
+  // for serialization
+  public RedisString() {
   }
 
+  public int append(ByteArrayWrapper appendValue, Region<ByteArrayWrapper, RedisString> region,
+                    ByteArrayWrapper key) {
+
+    RedisString redisStringInRegion = region.get(key);
+
+    if (redisStringInRegion == null) {
+      value = appendValue;
+    } else {
+      byte[] newValue = concatArrays(value.toBytes(), appendValue.toBytes());
+      value.setBytes(newValue);
+    }
+
+    region.put(key, this);
+    return value.length();
+  }
+
+  public String getValue() {
+    return value.toString();
+  }
+
+
+  private byte[] concatArrays(byte[] o, byte[] n) {
+    int oLen = o.length;
+    int nLen = n.length;
+    byte[] combined = new byte[oLen + nLen];
+    System.arraycopy(o, 0, combined, 0, oLen);
+    System.arraycopy(n, 0, combined, oLen, nLen);
+    return combined;
+  }
+
+  @Override
+  public void toData(DataOutput out) throws IOException {
+    DataSerializer.writeByteArray(value.toBytes(), out);
+  }
+
+  @Override
+  public void fromData(DataInput in) throws IOException {
+    value = new ByteArrayWrapper(DataSerializer.readByteArray(in));
+  }
 }
