@@ -34,8 +34,6 @@ public class RedisString implements DataSerializable {
     this.value = value;
   }
 
-
-
   // for serialization
   public RedisString() {
   }
@@ -43,9 +41,9 @@ public class RedisString implements DataSerializable {
   public int append(ByteArrayWrapper appendValue, Region<ByteArrayWrapper, RedisString> region,
                     ByteArrayWrapper key) {
 
-    RedisString redisStringInRegion = region.get(key);
+    RedisString redisString = region.get(key);
 
-    if (redisStringInRegion == null) {
+    if (redisString == null) {
       value = appendValue;
     } else {
       byte[] newValue = concatArrays(value.toBytes(), appendValue.toBytes());
@@ -56,10 +54,18 @@ public class RedisString implements DataSerializable {
     return value.length();
   }
 
+  public ByteArrayWrapper get(Region<ByteArrayWrapper, RedisString> region, ByteArrayWrapper key) {
+    return region.get(key).getValue();
+  }
+
+  public RedisString set(ByteArrayWrapper value, Region<ByteArrayWrapper, RedisString> region, ByteArrayWrapper key) {
+    this.value = value;
+    return region.put(key, this);
+  }
+
   public ByteArrayWrapper getValue() {
     return value;
   }
-
 
   private byte[] concatArrays(byte[] o, byte[] n) {
     int oLen = o.length;
@@ -79,4 +85,5 @@ public class RedisString implements DataSerializable {
   public void fromData(DataInput in) throws IOException {
     value = new ByteArrayWrapper(DataSerializer.readByteArray(in));
   }
+
 }
