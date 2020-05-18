@@ -14,8 +14,6 @@
  */
 package org.apache.geode.redis.internal.executor.string;
 
-import static org.apache.geode.redis.internal.RedisCommandType.SET;
-import static org.apache.geode.redis.internal.RedisCommandType.SETNX;
 import static org.apache.geode.redis.internal.RedisConstants.ERROR_INVALID_EXPIRE_TIME;
 import static org.apache.geode.redis.internal.RedisConstants.ERROR_NOT_INTEGER;
 import static org.apache.geode.redis.internal.RedisConstants.ERROR_SYNTAX;
@@ -23,7 +21,6 @@ import static org.apache.geode.redis.internal.RedisConstants.ERROR_SYNTAX;
 import java.util.List;
 
 import org.apache.geode.cache.Region;
-import org.apache.geode.management.internal.cli.remote.CommandExecutor;
 import org.apache.geode.redis.internal.ByteArrayWrapper;
 import org.apache.geode.redis.internal.Coder;
 import org.apache.geode.redis.internal.Command;
@@ -32,9 +29,6 @@ import org.apache.geode.redis.internal.RedisData;
 import org.apache.geode.redis.internal.RedisDataType;
 import org.apache.geode.redis.internal.RedisDataTypeMismatchException;
 import org.apache.geode.redis.internal.executor.AbstractExecutor;
-import org.apache.geode.redis.internal.executor.CommandFunction;
-import org.apache.geode.redis.internal.executor.set.RedisSetCommands;
-import org.apache.geode.redis.internal.executor.set.RedisSetCommandsFunctionExecutor;
 
 public class SetExecutor extends StringExecutor {
 
@@ -90,6 +84,7 @@ public class SetExecutor extends StringExecutor {
        if (existingKeyType == null) {
          command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
        } else {
+         removeKeyIfExistsAndNotAString(context, key);
          redisStringCommands.set(key, value);
          context.getKeyRegistrar().register(key, RedisDataType.REDIS_STRING);
          command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
@@ -97,19 +92,23 @@ public class SetExecutor extends StringExecutor {
        return;
      }
 
-
     try {
       // check key registrar
-      RedisDataType existingKeyType = context.getKeyRegistrar().getType(key);
-      if (existingKeyType != null && existingKeyType != RedisDataType.REDIS_STRING) {
-        // Crap, it already exists. We need to kill it.
-        removeEntry(key, existingKeyType, context);
-      }
+      removeKeyIfExistsAndNotAString(context, key);
       redisStringCommands.set(key, value);
       context.getKeyRegistrar().register(key, RedisDataType.REDIS_STRING);
       command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
     } catch (Exception e) {
       command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
+    }
+  }
+
+  private void removeKeyIfExistsAndNotAString(ExecutionHandlerContext context,
+                                              ByteArrayWrapper key) {
+    RedisDataType existingKeyType = context.getKeyRegistrar().getType(key);
+    if (existingKeyType != null && existingKeyType != RedisDataType.REDIS_STRING) {
+      // Crap, it already exists. We need to kill it.
+      removeEntry(key, existingKeyType, context);
     }
   }
 
