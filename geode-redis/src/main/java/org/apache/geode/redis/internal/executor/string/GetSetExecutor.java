@@ -25,6 +25,7 @@ import org.apache.geode.redis.internal.Command;
 import org.apache.geode.redis.internal.ExecutionHandlerContext;
 import org.apache.geode.redis.internal.RedisConstants;
 import org.apache.geode.redis.internal.RedisConstants.ArityDef;
+import org.apache.geode.redis.internal.RedisData;
 import org.apache.geode.redis.internal.RedisDataType;
 
 public class GetSetExecutor extends StringExecutor {
@@ -40,7 +41,7 @@ public class GetSetExecutor extends StringExecutor {
       return;
     }
 
-    Region<ByteArrayWrapper, ByteArrayWrapper> region =
+    Region<ByteArrayWrapper, RedisData> region =
         context.getRegionProvider().getStringsRegion();
 
     ByteArrayWrapper key = command.getKey();
@@ -48,20 +49,21 @@ public class GetSetExecutor extends StringExecutor {
 
     byte[] newCharValue = commandElems.get(VALUE_INDEX);
     ByteArrayWrapper newValueWrapper = new ByteArrayWrapper(newCharValue);
-    ByteArrayWrapper oldValueWrapper;
+    ByteArrayWrapper oldValueWrapper = null;
     try (AutoCloseableLock regionLock = withRegionLock(context, key)) {
-      oldValueWrapper = region.get(key);
-      if (oldValueWrapper != null) {
-        try {
-          checkDataType(oldValueWrapper, RedisDataType.REDIS_STRING, context);
-        } catch (Exception e) {
-          command.setResponse(
-              Coder.getErrorResponse(context.getByteBufAllocator(),
-                  RedisConstants.ERROR_WRONG_TYPE));
-          return;
-        }
-      }
-      region.put(key, newValueWrapper);
+      // TODO: actually make this work with new data type
+//      oldValueWrapper = region.get(key);
+//      if (oldValueWrapper != null) {
+//        try {
+//          checkDataType(oldValueWrapper, RedisDataType.REDIS_STRING, context);
+//        } catch (Exception e) {
+//          command.setResponse(
+//              Coder.getErrorResponse(context.getByteBufAllocator(),
+//                  RedisConstants.ERROR_WRONG_TYPE));
+//          return;
+//        }
+//      }
+//      region.put(key, newValueWrapper);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       command.setResponse(

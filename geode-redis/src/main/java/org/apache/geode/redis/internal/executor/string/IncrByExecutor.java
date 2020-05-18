@@ -22,6 +22,7 @@ import org.apache.geode.redis.internal.Coder;
 import org.apache.geode.redis.internal.Command;
 import org.apache.geode.redis.internal.ExecutionHandlerContext;
 import org.apache.geode.redis.internal.RedisConstants.ArityDef;
+import org.apache.geode.redis.internal.RedisData;
 
 public class IncrByExecutor extends StringExecutor {
 
@@ -38,7 +39,7 @@ public class IncrByExecutor extends StringExecutor {
   public void executeCommand(Command command, ExecutionHandlerContext context) {
     List<byte[]> commandElems = command.getProcessedCommand();
 
-    Region<ByteArrayWrapper, ByteArrayWrapper> r = context.getRegionProvider().getStringsRegion();
+    Region<ByteArrayWrapper, RedisData> r = context.getRegionProvider().getStringsRegion();
 
     if (commandElems.size() < 3) {
       command.setResponse(Coder.getErrorResponse(context.getByteBufAllocator(), ArityDef.INCRBY));
@@ -47,7 +48,9 @@ public class IncrByExecutor extends StringExecutor {
 
     ByteArrayWrapper key = command.getKey();
     checkAndSetDataType(key, context);
-    ByteArrayWrapper valueWrapper = r.get(key);
+    RedisString redisString = (RedisString) r.get(key);
+
+    ByteArrayWrapper valueWrapper = redisString.getValue();
 
     /*
      * Try increment
@@ -69,7 +72,7 @@ public class IncrByExecutor extends StringExecutor {
      */
 
     if (valueWrapper == null) {
-      r.put(key, new ByteArrayWrapper(incrArray));
+      r.put(key, (RedisData) new RedisString(new ByteArrayWrapper(incrArray)));
       command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), increment));
       return;
     }
@@ -99,7 +102,7 @@ public class IncrByExecutor extends StringExecutor {
     value += increment;
 
     stringValue = "" + value;
-    r.put(key, new ByteArrayWrapper(Coder.stringToBytes(stringValue)));
+    r.put(key, (RedisData) new RedisString(new ByteArrayWrapper(Coder.stringToBytes(stringValue))));
 
     command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), value));
 

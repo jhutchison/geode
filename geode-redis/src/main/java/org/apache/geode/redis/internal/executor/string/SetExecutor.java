@@ -23,14 +23,18 @@ import static org.apache.geode.redis.internal.RedisConstants.ERROR_SYNTAX;
 import java.util.List;
 
 import org.apache.geode.cache.Region;
+import org.apache.geode.management.internal.cli.remote.CommandExecutor;
 import org.apache.geode.redis.internal.ByteArrayWrapper;
 import org.apache.geode.redis.internal.Coder;
 import org.apache.geode.redis.internal.Command;
 import org.apache.geode.redis.internal.ExecutionHandlerContext;
+import org.apache.geode.redis.internal.RedisData;
 import org.apache.geode.redis.internal.RedisDataType;
 import org.apache.geode.redis.internal.RedisDataTypeMismatchException;
 import org.apache.geode.redis.internal.executor.AbstractExecutor;
 import org.apache.geode.redis.internal.executor.CommandFunction;
+import org.apache.geode.redis.internal.executor.set.RedisSetCommands;
+import org.apache.geode.redis.internal.executor.set.RedisSetCommandsFunctionExecutor;
 
 public class SetExecutor extends StringExecutor {
 
@@ -54,8 +58,13 @@ public class SetExecutor extends StringExecutor {
       throw new RedisDataTypeMismatchException("The key name \"" + key + "\" is protected");
     }
 
-    Region<ByteArrayWrapper, ByteArrayWrapper> region =
+    Region<ByteArrayWrapper, RedisData>
+        region =
         context.getRegionProvider().getStringsRegion();
+
+    RedisStringCommands
+        redisStringCommands =
+        new RedisStringCommandsFunctionExecutor(region);
 
     String parseError = parseCommandElems(commandElems);
     if (parseError != null) {
@@ -64,25 +73,43 @@ public class SetExecutor extends StringExecutor {
     }
 
     if (NX) {
-      if (CommandFunction.execute(SETNX, key, value, region)) {
+      // check key registrar
+      RedisDataType existingKeyType = context.getKeyRegistrar().getType(key);
+      if (existingKeyType == null) {
+        redisStringCommands.set(key, value);
+        context.getKeyRegistrar().register(key, RedisDataType.REDIS_STRING);
         command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
       } else {
         command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
       }
       return;
     }
-    //
-    // if (XX) {
-    // setXX(region, command, key, value, context);
-    // return;
-    // }
-    //
+
+     if (XX) {
+       RedisDataType existingKeyType = context.getKeyRegistrar().getType(key);
+       if (existingKeyType == null) {
+         command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
+       } else {
+         redisStringCommands.set(key, value);
+         context.getKeyRegistrar().register(key, RedisDataType.REDIS_STRING);
+         command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
+       }
+       return;
+     }
+
+
     try {
-      RedisString redisString = CommandFunction.execute(SET, key, value, region);
+      // check key registrar
+      RedisDataType existingKeyType = context.getKeyRegistrar().getType(key);
+      if (existingKeyType != null && existingKeyType != RedisDataType.REDIS_STRING) {
+        // Crap, it already exists. We need to kill it.
+        removeEntry(key, existingKeyType, context);
+      }
+      redisStringCommands.set(key, value);
+      context.getKeyRegistrar().register(key, RedisDataType.REDIS_STRING);
       command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
     } catch (Exception e) {
-      command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), null));
-
+      command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
     }
   }
 
@@ -185,8 +212,8 @@ public class SetExecutor extends StringExecutor {
   }
 
   private void setNX(Region<ByteArrayWrapper, ByteArrayWrapper> region, Command command,
-      ByteArrayWrapper key, ByteArrayWrapper valueWrapper,
-      ExecutionHandlerContext context) {
+                     ByteArrayWrapper key, ByteArrayWrapper valueWrapper,
+                     ExecutionHandlerContext context) {
     if (keyAlreadyExistsForDifferentDataType(context, key)) {
       command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
       return;
@@ -205,8 +232,8 @@ public class SetExecutor extends StringExecutor {
   }
 
   private void setXX(Region<ByteArrayWrapper, ByteArrayWrapper> region, Command command,
-      ByteArrayWrapper key, ByteArrayWrapper valueWrapper,
-      ExecutionHandlerContext context) {
+                     ByteArrayWrapper key, ByteArrayWrapper valueWrapper,
+                     ExecutionHandlerContext context) {
     if (region.containsKey(key) || keyAlreadyExistsForDifferentDataType(context, key)) {
       set(command, context, region, key, valueWrapper);
     } else {
@@ -215,8 +242,8 @@ public class SetExecutor extends StringExecutor {
   }
 
   private void set(Command command, ExecutionHandlerContext context,
-      Region<ByteArrayWrapper, ByteArrayWrapper> stringsRegion, ByteArrayWrapper key,
-      ByteArrayWrapper valueWrapper) {
+                   Region<ByteArrayWrapper, ByteArrayWrapper> stringsRegion, ByteArrayWrapper key,
+                   ByteArrayWrapper valueWrapper) {
     if (keyAlreadyExistsForDifferentDataType(context, key)) {
       removeOldValueAndDataTypeAssociation(context, key);
     }
@@ -227,7 +254,7 @@ public class SetExecutor extends StringExecutor {
   }
 
   private boolean keyAlreadyExistsForDifferentDataType(ExecutionHandlerContext context,
-      ByteArrayWrapper key) {
+                                                       ByteArrayWrapper key) {
     try {
       checkDataType(key, RedisDataType.REDIS_STRING, context);
     } catch (RedisDataTypeMismatchException e) {
@@ -238,7 +265,7 @@ public class SetExecutor extends StringExecutor {
   }
 
   private void removeOldValueAndDataTypeAssociation(ExecutionHandlerContext context,
-      ByteArrayWrapper key) {
+                                                    ByteArrayWrapper key) {
     Region oldRegion = getRegion(context, key);
     oldRegion.remove(key);
     context.getKeyRegistrar().unregister(key);

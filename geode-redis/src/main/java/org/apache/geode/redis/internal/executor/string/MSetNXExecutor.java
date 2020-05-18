@@ -24,6 +24,7 @@ import org.apache.geode.redis.internal.Coder;
 import org.apache.geode.redis.internal.Command;
 import org.apache.geode.redis.internal.ExecutionHandlerContext;
 import org.apache.geode.redis.internal.RedisConstants.ArityDef;
+import org.apache.geode.redis.internal.RedisData;
 import org.apache.geode.redis.internal.RedisDataType;
 import org.apache.geode.redis.internal.RedisDataTypeMismatchException;
 
@@ -37,7 +38,7 @@ public class MSetNXExecutor extends StringExecutor {
   public void executeCommand(Command command, ExecutionHandlerContext context) {
     List<byte[]> commandElems = command.getProcessedCommand();
 
-    Region<ByteArrayWrapper, ByteArrayWrapper> region =
+    Region<ByteArrayWrapper, RedisData> region =
         context.getRegionProvider().getStringsRegion();
 
     if (commandElems.size() < 3 || commandElems.size() % 2 == 0) {
@@ -75,7 +76,8 @@ public class MSetNXExecutor extends StringExecutor {
           break;
         }
       }
-      region.putAll(map);
+      // TODO: make actually work
+//      region.putAll(map);
     }
     if (successful) {
       command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), SET));

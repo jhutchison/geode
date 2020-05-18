@@ -53,7 +53,8 @@ public class RedisStringInRegion implements RedisStringCommands {
     RedisString redisString = region.get(key);
 
     if (redisString == null) {
-      region.create(key, new RedisString(value));
+      redisString = new RedisString(value);
+      region.create(key, redisString);
     }
     return redisString.set(value, region, key);
   }

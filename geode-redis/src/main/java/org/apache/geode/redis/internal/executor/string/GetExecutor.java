@@ -20,6 +20,7 @@ import org.apache.geode.cache.Region;
 import org.apache.geode.redis.internal.ByteArrayWrapper;
 import org.apache.geode.redis.internal.Command;
 import org.apache.geode.redis.internal.ExecutionHandlerContext;
+import org.apache.geode.redis.internal.RedisData;
 import org.apache.geode.redis.internal.RedisDataType;
 import org.apache.geode.redis.internal.executor.CommandFunction;
 
@@ -31,7 +32,7 @@ public class GetExecutor extends StringExecutor {
     ByteArrayWrapper key = command.getKey();
     checkDataType(key, RedisDataType.REDIS_STRING, context);
 
-    Region<ByteArrayWrapper, ByteArrayWrapper> region =
+    Region<ByteArrayWrapper, RedisData> region =
         context.getRegionProvider().getStringsRegion();
 
     ByteArrayWrapper valueAsBytes = null;

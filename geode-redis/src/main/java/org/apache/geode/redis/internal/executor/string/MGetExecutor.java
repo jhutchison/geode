@@ -25,6 +25,7 @@ import org.apache.geode.redis.internal.Coder;
 import org.apache.geode.redis.internal.Command;
 import org.apache.geode.redis.internal.ExecutionHandlerContext;
 import org.apache.geode.redis.internal.RedisConstants.ArityDef;
+import org.apache.geode.redis.internal.RedisData;
 
 public class MGetExecutor extends StringExecutor {
 
@@ -32,7 +33,7 @@ public class MGetExecutor extends StringExecutor {
   public void executeCommand(Command command, ExecutionHandlerContext context) {
     List<byte[]> commandElems = command.getProcessedCommand();
 
-    Region<ByteArrayWrapper, ByteArrayWrapper> r = context.getRegionProvider().getStringsRegion();
+    Region<ByteArrayWrapper, RedisData> r = context.getRegionProvider().getStringsRegion();
 
     if (commandElems.size() < 2) {
       command.setResponse(Coder.getErrorResponse(context.getByteBufAllocator(), ArityDef.MGET));
@@ -50,18 +51,19 @@ public class MGetExecutor extends StringExecutor {
       keys.add(key);
     }
 
-    Map<ByteArrayWrapper, ByteArrayWrapper> results = r.getAll(keys);
+    // TODO: make this work
+//    Map<ByteArrayWrapper, RedisData> results = r.getAll(keys);
 
-    Collection<ByteArrayWrapper> values = new ArrayList<ByteArrayWrapper>();
+//    Collection<ByteArrayWrapper> values = new ArrayList<ByteArrayWrapper>();
+//
+//    /*
+//     * This is done to preserve order in the output
+//     */
+//    for (ByteArrayWrapper key : keys) {
+//      values.add(results.get(key));
+//    }
 
-    /*
-     * This is done to preserve order in the output
-     */
-    for (ByteArrayWrapper key : keys) {
-      values.add(results.get(key));
-    }
-
-    respondBulkStrings(command, context, values);
+//    respondBulkStrings(command, context, values);
   }
 
 }

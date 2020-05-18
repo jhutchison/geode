@@ -26,6 +26,7 @@ import org.apache.geode.redis.internal.Coder;
 import org.apache.geode.redis.internal.Command;
 import org.apache.geode.redis.internal.ExecutionHandlerContext;
 import org.apache.geode.redis.internal.RedisConstants.ArityDef;
+import org.apache.geode.redis.internal.RedisData;
 import org.apache.geode.redis.internal.RedisDataTypeMismatchException;
 
 public class MSetExecutor extends StringExecutor {
@@ -42,7 +43,7 @@ public class MSetExecutor extends StringExecutor {
       return;
     }
 
-    Region<ByteArrayWrapper, ByteArrayWrapper> region =
+    Region<ByteArrayWrapper, RedisData> region =
         context.getRegionProvider().getStringsRegion();
 
     Map<ByteArrayWrapper, ByteArrayWrapper> map = new HashMap<ByteArrayWrapper, ByteArrayWrapper>();
@@ -61,7 +62,8 @@ public class MSetExecutor extends StringExecutor {
     ByteArrayWrapper key = command.getKey();
     checkAndSetDataType(key, context);
     try (AutoCloseableLock regionLock = withRegionLock(context, key)) {
-      region.putAll(map);
+      // TODO: make this work
+//      region.putAll(map);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       command.setResponse(

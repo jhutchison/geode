@@ -25,6 +25,7 @@ import org.apache.geode.redis.internal.Command;
 import org.apache.geode.redis.internal.ExecutionHandlerContext;
 import org.apache.geode.redis.internal.RedisConstants;
 import org.apache.geode.redis.internal.RedisConstants.ArityDef;
+import org.apache.geode.redis.internal.RedisData;
 
 public class IncrExecutor extends StringExecutor {
   private final int INIT_VALUE_INT = 1;
@@ -40,13 +41,14 @@ public class IncrExecutor extends StringExecutor {
       return;
     }
 
-    Region<ByteArrayWrapper, ByteArrayWrapper> region =
+    Region<ByteArrayWrapper, RedisData> region =
         context.getRegionProvider().getStringsRegion();
 
     ByteArrayWrapper key = command.getKey();
     checkAndSetDataType(key, context);
     try (AutoCloseableLock regionLock = withRegionLock(context, key)) {
-      ByteArrayWrapper valueWrapper = region.get(key);
+      RedisString redisString = (RedisString) region.get(key);
+      ByteArrayWrapper valueWrapper = redisString.getValue();
 
       /*
        * Value does not exist
@@ -54,7 +56,7 @@ public class IncrExecutor extends StringExecutor {
 
       if (valueWrapper == null) {
         byte[] newValue = {Coder.NUMBER_1_BYTE};
-        region.put(key, new ByteArrayWrapper(newValue));
+        region.put(key, (RedisData) new RedisString(new ByteArrayWrapper(newValue)));
         command
             .setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), INIT_VALUE_INT));
         return;
@@ -84,7 +86,7 @@ public class IncrExecutor extends StringExecutor {
       value++;
 
       stringValue = "" + value;
-      region.put(key, new ByteArrayWrapper(Coder.stringToBytes(stringValue)));
+      region.put(key, (RedisData) new RedisString(new ByteArrayWrapper(Coder.stringToBytes(stringValue))));
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       command.setResponse(

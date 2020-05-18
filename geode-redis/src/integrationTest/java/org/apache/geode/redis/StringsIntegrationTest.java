@@ -15,7 +15,7 @@
 package org.apache.geode.redis;
 
 import static java.lang.Integer.parseInt;
-import static org.apache.geode.redis.internal.GeodeRedisServer.REDIS_META_DATA_REGION;
+import static org.apache.geode.redis.internal.GeodeRedisServer.REDIS_DATA_REGION;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -118,7 +118,19 @@ public class StringsIntegrationTest {
   }
 
   @Test
-  public void testSET_shouldSetNX_evenIfKeyContainsOtherDataType() {
+  public void testSET_setNX_shouldWriteKey_WhenKeyDoesNotExist() {
+    String key = "key";
+    String stringValue = "value";
+
+    SetParams setParams = new SetParams();
+    setParams.nx();
+
+    String result = jedis.set(key, stringValue, setParams);
+    assertThat(result).isEqualTo("OK");
+  }
+
+  @Test
+  public void testSET_setNX_ShouldNotOverwriteKey_evenIfKeyContainsOtherDataType() {
     String key = "key";
     String stringValue = "value";
 
@@ -131,7 +143,19 @@ public class StringsIntegrationTest {
   }
 
   @Test
-  public void testSET_shouldSetXX_evenIfKeyContainsOtherDataType() {
+  public void testSET_setXX_shouldNotWriteKey_WhenKeyDoesNotExist() {
+    String key = "key";
+    String stringValue = "value";
+
+    SetParams setParams = new SetParams();
+    setParams.xx();
+
+    String result = jedis.set(key, stringValue, setParams);
+    assertThat(result).isNull();
+  }
+
+  @Test
+  public void testSET_setXX_shouldOverwriteKey_evenIfKeyContainsOtherDataType() {
     String key = "key";
     String stringValue = "value";
 
@@ -583,7 +607,7 @@ public class StringsIntegrationTest {
   @Test
   public void testSet_protectedRedisDataType_throwsRedisDataTypeMismatchException() {
     assertThatThrownBy(
-        () -> jedis.set(REDIS_META_DATA_REGION, "something else"))
+        () -> jedis.set(REDIS_DATA_REGION, "something else"))
             .isInstanceOf(JedisDataException.class)
             .hasMessageContaining("protected");
   }

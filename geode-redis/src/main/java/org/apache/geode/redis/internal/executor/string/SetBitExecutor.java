@@ -22,6 +22,7 @@ import org.apache.geode.redis.internal.Coder;
 import org.apache.geode.redis.internal.Command;
 import org.apache.geode.redis.internal.ExecutionHandlerContext;
 import org.apache.geode.redis.internal.RedisConstants.ArityDef;
+import org.apache.geode.redis.internal.RedisData;
 
 public class SetBitExecutor extends StringExecutor {
 
@@ -36,7 +37,7 @@ public class SetBitExecutor extends StringExecutor {
   public void executeCommand(Command command, ExecutionHandlerContext context) {
     List<byte[]> commandElems = command.getProcessedCommand();
 
-    Region<ByteArrayWrapper, ByteArrayWrapper> r = context.getRegionProvider().getStringsRegion();
+    Region<ByteArrayWrapper, RedisData> r = context.getRegionProvider().getStringsRegion();
 
     if (commandElems.size() < 4) {
       command.setResponse(Coder.getErrorResponse(context.getByteBufAllocator(), ArityDef.SETBIT));
@@ -45,7 +46,8 @@ public class SetBitExecutor extends StringExecutor {
 
     ByteArrayWrapper key = command.getKey();
     checkAndSetDataType(key, context);
-    ByteArrayWrapper wrapper = r.get(key);
+    RedisString redisString = (RedisString) r.get(key);
+    ByteArrayWrapper wrapper = redisString.getValue();
 
     long offset;
     int value;
@@ -79,7 +81,7 @@ public class SetBitExecutor extends StringExecutor {
       if (value == 1) {
         bytes[byteIndex] = (byte) (0x80 >> offset);
       }
-      r.put(key, new ByteArrayWrapper(bytes));
+      r.put(key, (RedisData) new RedisString(new ByteArrayWrapper(bytes)));
       command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), 0));
     } else {
 
@@ -93,13 +95,13 @@ public class SetBitExecutor extends StringExecutor {
       if (byteIndex < bytes.length) {
         bytes[byteIndex] = value == 1 ? (byte) (bytes[byteIndex] | (0x80 >> offset))
             : (byte) (bytes[byteIndex] & ~(0x80 >> offset));
-        r.put(key, new ByteArrayWrapper(bytes));
+        r.put(key, (RedisData) new RedisString(new ByteArrayWrapper(bytes)));
       } else {
         byte[] newBytes = new byte[byteIndex + 1];
         System.arraycopy(bytes, 0, newBytes, 0, bytes.length);
         newBytes[byteIndex] = value == 1 ? (byte) (newBytes[byteIndex] | (0x80 >> offset))
             : (byte) (newBytes[byteIndex] & ~(0x80 >> offset));
-        r.put(key, new ByteArrayWrapper(newBytes));
+        r.put(key, (RedisData) new RedisString(new ByteArrayWrapper(newBytes)));
       }
 
       command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), returnBit));

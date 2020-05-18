@@ -22,6 +22,7 @@ import org.apache.geode.redis.internal.Coder;
 import org.apache.geode.redis.internal.Command;
 import org.apache.geode.redis.internal.ExecutionHandlerContext;
 import org.apache.geode.redis.internal.RedisConstants.ArityDef;
+import org.apache.geode.redis.internal.RedisData;
 
 public class DecrByExecutor extends StringExecutor {
 
@@ -39,7 +40,7 @@ public class DecrByExecutor extends StringExecutor {
   public void executeCommand(Command command, ExecutionHandlerContext context) {
     List<byte[]> commandElems = command.getProcessedCommand();
 
-    Region<ByteArrayWrapper, ByteArrayWrapper> r = context.getRegionProvider().getStringsRegion();
+    Region<ByteArrayWrapper, RedisData> r = context.getRegionProvider().getStringsRegion();
 
     if (commandElems.size() < 3) {
       command.setResponse(Coder.getErrorResponse(context.getByteBufAllocator(), ArityDef.DECRBY));
@@ -47,7 +48,8 @@ public class DecrByExecutor extends StringExecutor {
     }
     ByteArrayWrapper key = command.getKey();
     checkAndSetDataType(key, context);
-    ByteArrayWrapper valueWrapper = r.get(key);
+    RedisString redisString = (RedisString) r.get(key);
+    ByteArrayWrapper valueWrapper = redisString.getValue();
 
     /*
      * Try increment
@@ -72,7 +74,7 @@ public class DecrByExecutor extends StringExecutor {
     if (valueWrapper == null) {
       String negativeDecrString =
           decrString.charAt(0) == Coder.HYPHEN_ID ? decrString.substring(1) : "-" + decrString;
-      r.put(key, new ByteArrayWrapper(Coder.stringToBytes(negativeDecrString)));
+      r.put(key, (RedisData) new RedisString(new ByteArrayWrapper(Coder.stringToBytes(negativeDecrString))));
       command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), -decrement));
       return;
     }
@@ -104,7 +106,7 @@ public class DecrByExecutor extends StringExecutor {
     value -= decrement;
 
     stringValue = "" + value;
-    r.put(key, new ByteArrayWrapper(Coder.stringToBytes(stringValue)));
+    r.put(key, (RedisData) (new RedisString(new ByteArrayWrapper(Coder.stringToBytes(stringValue)))));
 
     command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), value));
 

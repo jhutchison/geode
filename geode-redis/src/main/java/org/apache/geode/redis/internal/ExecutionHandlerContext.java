@@ -35,6 +35,7 @@ import org.apache.geode.cache.RegionDestroyedException;
 import org.apache.geode.cache.TransactionException;
 import org.apache.geode.cache.TransactionId;
 import org.apache.geode.cache.UnsupportedOperationInTransactionException;
+import org.apache.geode.cache.execute.FunctionException;
 import org.apache.geode.cache.query.QueryInvocationTargetException;
 import org.apache.geode.cache.query.RegionNotFoundException;
 import org.apache.geode.logging.internal.log4j.api.LogService;
@@ -55,7 +56,7 @@ public class ExecutionHandlerContext extends ChannelInboundHandlerAdapter {
   private static final Logger logger = LogService.getLogger();
   private static final int WAIT_REGION_DSTRYD_MILLIS = 100;
   private static final int MAXIMUM_NUM_RETRIES = (1000 * 60) / WAIT_REGION_DSTRYD_MILLIS; // 60
-                                                                                          // seconds
+  // seconds
   private final RedisLockService lockService;
 
   private final Cache cache;
@@ -99,7 +100,8 @@ public class ExecutionHandlerContext extends ChannelInboundHandlerAdapter {
    * @param password Authentication password for each context, can be null
    */
   public ExecutionHandlerContext(Channel channel, Cache cache, RegionProvider regionProvider,
-      GeodeRedisServer server, byte[] password, KeyRegistrar keyRegistrar, PubSub pubSub,
+      GeodeRedisServer server, byte[] password,
+      KeyRegistrar keyRegistrar, PubSub pubSub,
       RedisLockService lockService) {
     this.keyRegistrar = keyRegistrar;
     this.lockService = lockService;
@@ -144,6 +146,7 @@ public class ExecutionHandlerContext extends ChannelInboundHandlerAdapter {
       if (logger.isDebugEnabled()) {
         logger.debug("Executing Redis command: {}", command);
       }
+
       executeCommand(ctx, command);
     } catch (Exception e) {
       logger.warn("Execution of Redis command {} failed: {}", command, e);
@@ -167,6 +170,19 @@ public class ExecutionHandlerContext extends ChannelInboundHandlerAdapter {
 
   private ByteBuf getExceptionResponse(ChannelHandlerContext ctx, Throwable cause) {
     ByteBuf response;
+    if (cause instanceof FunctionException) {
+      Throwable th = cause.getCause();
+      if (th == null) {
+        FunctionException functionException = (FunctionException) cause;
+        if (functionException.getExceptions() != null) {
+          th = functionException.getExceptions().get(0);
+        }
+      }
+      if (th != null) {
+        cause = th;
+      }
+    }
+
     if (cause instanceof RedisDataTypeMismatchException) {
       response = Coder.getWrongTypeResponse(this.byteBufAllocator, cause.getMessage());
     } else if (cause instanceof DecoderException
@@ -215,6 +231,8 @@ public class ExecutionHandlerContext extends ChannelInboundHandlerAdapter {
         executeWithoutTransaction(command);
       }
 
+      logResponse(command);
+
       if (hasTransaction() && command.isOfType(RedisCommandType.MULTI)) {
         writeToChannel(
             Coder.getSimpleStringResponse(this.byteBufAllocator, RedisConstants.COMMAND_QUEUED));
@@ -238,6 +256,35 @@ public class ExecutionHandlerContext extends ChannelInboundHandlerAdapter {
       ByteBuf r = Coder.getNoAuthResponse(this.byteBufAllocator, RedisConstants.ERROR_NOT_AUTH);
       writeToChannel(r);
     }
+  }
+
+  private void logResponse(Command command) {
+    if (logger.isDebugEnabled() && command.getResponse() != null) {
+      ByteBuf response = null;
+      try {
+        response = command.getResponse()
+            .copy(0, Math.min(command.getResponse().readableBytes(), 100));
+        logger.debug("Redis command returned: {}", getPrintableByteBuf(response));
+      } finally {
+        if (response != null) {
+          response.release();
+        }
+      }
+    }
+  }
+
+  private String getPrintableByteBuf(ByteBuf buf) {
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < buf.readableBytes(); i++) {
+      byte aByte = buf.getByte(i);
+      if (aByte > 31 && aByte < 127) {
+        builder.append((char) aByte);
+      } else {
+        builder.append(String.format("\\x%02x", aByte));
+      }
+    }
+
+    return builder.toString();
   }
 
 
