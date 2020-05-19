@@ -48,7 +48,8 @@ public class MSetNXExecutor extends StringExecutor {
 
     boolean hasEntry = false;
 
-    Map<ByteArrayWrapper, ByteArrayWrapper> map = new HashMap<ByteArrayWrapper, ByteArrayWrapper>();
+    Map<ByteArrayWrapper, RedisData> map = new HashMap<>();
+
     for (int i = 1; i < commandElems.size(); i += 2) {
       byte[] keyArray = commandElems.get(i);
       ByteArrayWrapper key = new ByteArrayWrapper(keyArray);
@@ -59,7 +60,8 @@ public class MSetNXExecutor extends StringExecutor {
         break;
       }
       byte[] value = commandElems.get(i + 1);
-      map.put(key, new ByteArrayWrapper(value));
+      ByteArrayWrapper valueAsByteArray = new ByteArrayWrapper(value);
+      map.put(key, new RedisString(valueAsByteArray));
       if (region.containsKey(key)) {
         hasEntry = true;
         break;
@@ -76,8 +78,7 @@ public class MSetNXExecutor extends StringExecutor {
           break;
         }
       }
-      // TODO: make actually work
-//      region.putAll(map);
+      region.putAll(map);
     }
     if (successful) {
       command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), SET));

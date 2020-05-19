@@ -46,7 +46,7 @@ public class MSetExecutor extends StringExecutor {
     Region<ByteArrayWrapper, RedisData> region =
         context.getRegionProvider().getStringsRegion();
 
-    Map<ByteArrayWrapper, ByteArrayWrapper> map = new HashMap<ByteArrayWrapper, ByteArrayWrapper>();
+    Map<ByteArrayWrapper, RedisString> map = new HashMap<>();
     for (int i = 1; i < commandElems.size(); i += 2) {
       byte[] keyArray = commandElems.get(i);
       ByteArrayWrapper key = new ByteArrayWrapper(keyArray);
@@ -56,14 +56,16 @@ public class MSetExecutor extends StringExecutor {
         continue;
       }
       byte[] value = commandElems.get(i + 1);
-      map.put(key, new ByteArrayWrapper(value));
+      ByteArrayWrapper byteArrayWrapper = new ByteArrayWrapper(value);
+      map.put(key, new RedisString(byteArrayWrapper));
+
     }
 
     ByteArrayWrapper key = command.getKey();
     checkAndSetDataType(key, context);
+
     try (AutoCloseableLock regionLock = withRegionLock(context, key)) {
-      // TODO: make this work
-//      region.putAll(map);
+      region.putAll(map);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       command.setResponse(

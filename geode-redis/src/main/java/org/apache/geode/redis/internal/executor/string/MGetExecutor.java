@@ -33,7 +33,7 @@ public class MGetExecutor extends StringExecutor {
   public void executeCommand(Command command, ExecutionHandlerContext context) {
     List<byte[]> commandElems = command.getProcessedCommand();
 
-    Region<ByteArrayWrapper, RedisData> r = context.getRegionProvider().getStringsRegion();
+    Region<ByteArrayWrapper, RedisData> region = context.getRegionProvider().getStringsRegion();
 
     if (commandElems.size() < 2) {
       command.setResponse(Coder.getErrorResponse(context.getByteBufAllocator(), ArityDef.MGET));
@@ -51,19 +51,25 @@ public class MGetExecutor extends StringExecutor {
       keys.add(key);
     }
 
-    // TODO: make this work
-//    Map<ByteArrayWrapper, RedisData> results = r.getAll(keys);
+    Map<ByteArrayWrapper, RedisData> results = region.getAll(keys);
 
-//    Collection<ByteArrayWrapper> values = new ArrayList<ByteArrayWrapper>();
-//
-//    /*
-//     * This is done to preserve order in the output
-//     */
-//    for (ByteArrayWrapper key : keys) {
-//      values.add(results.get(key));
-//    }
+    Collection<ByteArrayWrapper> values = new ArrayList<>();
 
-//    respondBulkStrings(command, context, values);
+    /*
+     * This is done to preserve order in the output
+     */
+
+    for (ByteArrayWrapper key : keys) {
+
+      RedisString redisString = (RedisString) results.get(key);
+
+      ByteArrayWrapper valueToReturn =
+          redisString == null ? null : redisString.getValue();
+
+        values.add(valueToReturn);
+    }
+
+    respondBulkStrings(command, context, values);
   }
 
 }
