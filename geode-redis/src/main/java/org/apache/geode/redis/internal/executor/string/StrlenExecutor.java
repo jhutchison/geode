@@ -38,17 +38,17 @@ public class StrlenExecutor extends StringExecutor {
       return;
     }
 
-    Region<ByteArrayWrapper, RedisData> r = context.getRegionProvider().getStringsRegion();
+    Region<ByteArrayWrapper, RedisData> region = context.getRegionProvider().getStringsRegion();
 
     ByteArrayWrapper key = command.getKey();
     checkDataType(key, RedisDataType.REDIS_STRING, context);
-    RedisString redisString = (RedisString)r.get(key);
-    ByteArrayWrapper valueWrapper = redisString.getValue();
+    RedisString redisString = (RedisString) region.get(key);
 
-    if (valueWrapper == null) {
+    if (redisString == null) {
       command
           .setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), KEY_DOES_NOT_EXIST));
     } else {
+      ByteArrayWrapper valueWrapper = redisString.getValue();
       command.setResponse(
           Coder.getIntegerResponse(context.getByteBufAllocator(), valueWrapper.toBytes().length));
     }

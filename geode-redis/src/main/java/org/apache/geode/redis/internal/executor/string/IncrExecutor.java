@@ -48,13 +48,12 @@ public class IncrExecutor extends StringExecutor {
     checkAndSetDataType(key, context);
     try (AutoCloseableLock regionLock = withRegionLock(context, key)) {
       RedisString redisString = (RedisString) region.get(key);
-      ByteArrayWrapper valueWrapper = redisString.getValue();
 
       /*
        * Value does not exist
        */
 
-      if (valueWrapper == null) {
+      if (redisString == null) {
         byte[] newValue = {Coder.NUMBER_1_BYTE};
         region.put(key, (RedisData) new RedisString(new ByteArrayWrapper(newValue)));
         command
@@ -65,6 +64,7 @@ public class IncrExecutor extends StringExecutor {
       /*
        * Value exists
        */
+      ByteArrayWrapper valueWrapper = redisString.getValue();
 
       String stringValue = valueWrapper.toString();
 

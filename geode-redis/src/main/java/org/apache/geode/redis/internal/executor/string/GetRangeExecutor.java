@@ -54,17 +54,17 @@ public class GetRangeExecutor extends StringExecutor {
       return;
     }
 
-    Region<ByteArrayWrapper, RedisData> r = context.getRegionProvider().getStringsRegion();
+    Region<ByteArrayWrapper, RedisData> region = context.getRegionProvider().getStringsRegion();
     ByteArrayWrapper key = command.getKey();
     checkDataType(key, RedisDataType.REDIS_STRING, context);
-    RedisString redisString = (RedisString) r.get(key);
-    ByteArrayWrapper valueWrapper = redisString.getValue();
+    RedisString redisString = (RedisString) region.get(key);
 
-    if (valueWrapper == null) {
+    if (redisString == null) {
       command.setResponse(Coder.getEmptyStringResponse(context.getByteBufAllocator()));
       return;
     }
 
+    ByteArrayWrapper valueWrapper = redisString.getValue();
     byte[] value = valueWrapper.toBytes();
     int length = value.length;
 

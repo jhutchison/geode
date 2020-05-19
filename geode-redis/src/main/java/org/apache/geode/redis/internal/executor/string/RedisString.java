@@ -31,6 +31,7 @@ public class RedisString implements DataSerializable, RedisData {
   private ByteArrayWrapper value;
 
   // TODO: deltas
+  private transient ByteArrayWrapper delta;
 
   public RedisString(ByteArrayWrapper value) {
     this.value = value;
@@ -51,7 +52,12 @@ public class RedisString implements DataSerializable, RedisData {
       value.setBytes(newValue);
     }
 
-    region.put(key, this);
+    delta = value;
+    try {
+      region.put(key, this);
+    } finally {
+       delta = null;
+    }
     return value.length();
   }
 
@@ -102,16 +108,28 @@ public class RedisString implements DataSerializable, RedisData {
 
   @Override
   public boolean hasDelta() {
-    return false;
+    return delta != null;
   }
 
   @Override
   public void toDelta(DataOutput out) throws IOException {
-
+    DataSerializer.writeByteArray(delta.toBytes(), out);
   }
 
   @Override
   public void fromDelta(DataInput in) throws IOException, InvalidDeltaException {
-
+    try {
+      ByteArrayWrapper delta = new ByteArrayWrapper(DataSerializer.readByteArray(in));
+      if (delta != null) {
+        if (value == null) {
+          value = delta;
+        } else {
+          byte[] newValue = concatArrays(value.toBytes(), delta.toBytes());
+          value.setBytes(newValue);
+        }
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 }

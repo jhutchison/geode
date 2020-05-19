@@ -73,6 +73,7 @@ public class SetExecutor extends StringExecutor {
         redisStringCommands.set(key, value);
         context.getKeyRegistrar().register(key, RedisDataType.REDIS_STRING);
         command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
+        handleExpiration(context, key);
       } else {
         command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
       }
@@ -88,6 +89,7 @@ public class SetExecutor extends StringExecutor {
          redisStringCommands.set(key, value);
          context.getKeyRegistrar().register(key, RedisDataType.REDIS_STRING);
          command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
+         handleExpiration(context, key);
        }
        return;
      }
@@ -101,6 +103,7 @@ public class SetExecutor extends StringExecutor {
     } catch (Exception e) {
       command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
     }
+    handleExpiration(context, key);
   }
 
   private void removeKeyIfExistsAndNotAString(ExecutionHandlerContext context,

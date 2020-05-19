@@ -43,8 +43,8 @@ public class DecrExecutor extends StringExecutor {
     List<byte[]> commandElems = command.getProcessedCommand();
     long value;
 
-    RegionProvider rC = context.getRegionProvider();
-    Region<ByteArrayWrapper, RedisData> r = rC.getStringsRegion();
+    RegionProvider regionProvider = context.getRegionProvider();
+    Region<ByteArrayWrapper, RedisData> region = regionProvider.getStringsRegion();
 
     if (commandElems.size() < 2) {
       command.setResponse(Coder.getErrorResponse(context.getByteBufAllocator(), ArityDef.DECR));
@@ -55,21 +55,21 @@ public class DecrExecutor extends StringExecutor {
     checkAndSetDataType(key, context);
 
     try (AutoCloseableLock regionLock = withRegionLock(context, key)) {
-      RedisString redisString = (RedisString) r.get(key);
-      ByteArrayWrapper valueWrapper = redisString.getValue();
 
       /*
        * Value does not exist
        */
+      RedisString redisString = (RedisString) region.get(key);
 
-      if (valueWrapper == null) {
+      if (redisString == null) {
         byte[] newValue = INIT_VALUE_BYTES;
-        r.put(key, new RedisString(new ByteArrayWrapper(newValue)));
+        region.put(key, new RedisString(new ByteArrayWrapper(newValue)));
         command
             .setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), INIT_VALUE_INT));
         return;
       }
 
+      ByteArrayWrapper valueWrapper = redisString.getValue();
       /*
        * Value exists
        */
@@ -92,7 +92,7 @@ public class DecrExecutor extends StringExecutor {
 
       stringValue = "" + value;
 
-      r.put(key, new RedisString(
+      region.put(key, new RedisString(
           new ByteArrayWrapper(
               Coder.stringToBytes(stringValue))
       ));

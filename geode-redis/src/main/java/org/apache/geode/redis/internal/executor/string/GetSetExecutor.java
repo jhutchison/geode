@@ -51,19 +51,19 @@ public class GetSetExecutor extends StringExecutor {
     ByteArrayWrapper newValueWrapper = new ByteArrayWrapper(newCharValue);
     ByteArrayWrapper oldValueWrapper = null;
     try (AutoCloseableLock regionLock = withRegionLock(context, key)) {
-      // TODO: actually make this work with new data type
-//      oldValueWrapper = region.get(key);
-//      if (oldValueWrapper != null) {
-//        try {
-//          checkDataType(oldValueWrapper, RedisDataType.REDIS_STRING, context);
-//        } catch (Exception e) {
-//          command.setResponse(
-//              Coder.getErrorResponse(context.getByteBufAllocator(),
-//                  RedisConstants.ERROR_WRONG_TYPE));
-//          return;
-//        }
-//      }
-//      region.put(key, newValueWrapper);
+      RedisString redisString = (RedisString) region.get(key);
+      if (redisString != null) {
+        oldValueWrapper = redisString.getValue();
+        try {
+          checkDataType(oldValueWrapper, RedisDataType.REDIS_STRING, context);
+        } catch (Exception e) {
+          command.setResponse(
+              Coder.getErrorResponse(context.getByteBufAllocator(),
+                  RedisConstants.ERROR_WRONG_TYPE));
+          return;
+        }
+      }
+      region.put(key, new RedisString(newValueWrapper));
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       command.setResponse(
