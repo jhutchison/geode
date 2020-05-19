@@ -46,8 +46,7 @@ public class SetBitExecutor extends StringExecutor {
 
     ByteArrayWrapper key = command.getKey();
     checkAndSetDataType(key, context);
-    RedisString redisString = (RedisString) r.get(key);
-    ByteArrayWrapper wrapper = redisString.getValue();
+    RedisString redisStringValue = (RedisString) r.get(key);
 
     long offset;
     int value;
@@ -76,15 +75,16 @@ public class SetBitExecutor extends StringExecutor {
     int byteIndex = (int) (offset / 8);
     offset %= 8;
 
-    if (wrapper == null) {
+    if (redisStringValue == null) {
       byte[] bytes = new byte[byteIndex + 1];
       if (value == 1) {
         bytes[byteIndex] = (byte) (0x80 >> offset);
       }
-      r.put(key, (RedisData) new RedisString(new ByteArrayWrapper(bytes)));
+      r.put(key, new RedisString(new ByteArrayWrapper(bytes)));
       command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), 0));
     } else {
 
+      ByteArrayWrapper wrapper = redisStringValue.getValue();
       byte[] bytes = wrapper.toBytes();
       if (byteIndex < bytes.length) {
         returnBit = (bytes[byteIndex] & (0x80 >> offset)) >> (7 - offset);
@@ -95,13 +95,13 @@ public class SetBitExecutor extends StringExecutor {
       if (byteIndex < bytes.length) {
         bytes[byteIndex] = value == 1 ? (byte) (bytes[byteIndex] | (0x80 >> offset))
             : (byte) (bytes[byteIndex] & ~(0x80 >> offset));
-        r.put(key, (RedisData) new RedisString(new ByteArrayWrapper(bytes)));
+        r.put(key, new RedisString(new ByteArrayWrapper(bytes)));
       } else {
         byte[] newBytes = new byte[byteIndex + 1];
         System.arraycopy(bytes, 0, newBytes, 0, bytes.length);
         newBytes[byteIndex] = value == 1 ? (byte) (newBytes[byteIndex] | (0x80 >> offset))
             : (byte) (newBytes[byteIndex] & ~(0x80 >> offset));
-        r.put(key, (RedisData) new RedisString(new ByteArrayWrapper(newBytes)));
+        r.put(key,  new RedisString(new ByteArrayWrapper(newBytes)));
       }
 
       command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), returnBit));

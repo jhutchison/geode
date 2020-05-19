@@ -41,12 +41,12 @@ public class GetBitExecutor extends StringExecutor {
 
     ByteArrayWrapper key = command.getKey();
     checkAndSetDataType(key, context);
-    RedisString redisString = (RedisString) r.get(key);
-    ByteArrayWrapper wrapper = redisString.getValue();
-    if (wrapper == null) {
+    RedisString redisStringValue = (RedisString) r.get(key);
+    if (redisStringValue == null) {
       command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), 0));
       return;
     }
+    ByteArrayWrapper wrapper = redisStringValue.getValue();
 
     int bit = 0;
     byte[] bytes = wrapper.toBytes();
