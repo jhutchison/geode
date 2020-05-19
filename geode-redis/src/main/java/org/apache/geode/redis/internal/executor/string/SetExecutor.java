@@ -52,51 +52,36 @@ public class SetExecutor extends StringExecutor {
       throw new RedisDataTypeMismatchException("The key name \"" + key + "\" is protected");
     }
 
-    Region<ByteArrayWrapper, RedisData>
-        region =
+    Region<ByteArrayWrapper, RedisData> region =
         context.getRegionProvider().getStringsRegion();
 
-    RedisStringCommands
-        redisStringCommands =
+    RedisStringCommands redisStringCommands =
         new RedisStringCommandsFunctionExecutor(region);
 
     String parseError = parseCommandElems(commandElems);
+
     if (parseError != null) {
       command.setResponse(Coder.getErrorResponse(context.getByteBufAllocator(), parseError));
       return;
     }
 
     if (NX) {
-      // check key registrar
-      RedisDataType existingKeyType = context.getKeyRegistrar().getType(key);
-      if (existingKeyType == null) {
-        redisStringCommands.set(key, value);
-        context.getKeyRegistrar().register(key, RedisDataType.REDIS_STRING);
-        command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
-        handleExpiration(context, key);
-      } else {
-        command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
-      }
+      doNX(command, context, key, value, redisStringCommands);
       return;
     }
 
-     if (XX) {
-       RedisDataType existingKeyType = context.getKeyRegistrar().getType(key);
-       if (existingKeyType == null) {
-         command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
-       } else {
-         removeKeyIfExistsAndNotAString(context, key);
-         redisStringCommands.set(key, value);
-         context.getKeyRegistrar().register(key, RedisDataType.REDIS_STRING);
-         command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
-         handleExpiration(context, key);
-       }
-       return;
-     }
+    if (XX) {
+      doXX(command, context, key, value, redisStringCommands);
+      return;
+    }
 
+    doDefaultSet(command, context, key, value, redisStringCommands);
+  }
+
+  private void doDefaultSet(Command command, ExecutionHandlerContext context, ByteArrayWrapper key,
+                            ByteArrayWrapper value, RedisStringCommands redisStringCommands) {
     try {
-      // check key registrar
-      removeKeyIfExistsAndNotAString(context, key);
+      checkKeyRegistrarAndRemoveKeyIfNeeded(context, key);
       redisStringCommands.set(key, value);
       context.getKeyRegistrar().register(key, RedisDataType.REDIS_STRING);
       command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
@@ -106,8 +91,37 @@ public class SetExecutor extends StringExecutor {
     handleExpiration(context, key);
   }
 
-  private void removeKeyIfExistsAndNotAString(ExecutionHandlerContext context,
-                                              ByteArrayWrapper key) {
+  private void doXX(Command command, ExecutionHandlerContext context, ByteArrayWrapper key,
+                    ByteArrayWrapper value, RedisStringCommands redisStringCommands) {
+    RedisDataType existingKeyType = context.getKeyRegistrar().getType(key);
+    if (existingKeyType == null) {
+      command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
+    } else {
+      checkKeyRegistrarAndRemoveKeyIfNeeded(context, key);
+      redisStringCommands.set(key, value);
+      context.getKeyRegistrar().register(key, RedisDataType.REDIS_STRING);
+      command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
+      handleExpiration(context, key);
+    }
+  }
+
+  private void doNX(Command command, ExecutionHandlerContext context, ByteArrayWrapper key,
+                    ByteArrayWrapper value, RedisStringCommands redisStringCommands) {
+    // check key registrar
+    RedisDataType existingKeyType = context.getKeyRegistrar().getType(key);
+    if (existingKeyType == null) {
+      redisStringCommands.set(key, value);
+      context.getKeyRegistrar().register(key, RedisDataType.REDIS_STRING);
+      command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
+      handleExpiration(context, key);
+    } else {
+      command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
+    }
+    return;
+  }
+
+  private void checkKeyRegistrarAndRemoveKeyIfNeeded(ExecutionHandlerContext context,
+                                                     ByteArrayWrapper key) {
     RedisDataType existingKeyType = context.getKeyRegistrar().getType(key);
     if (existingKeyType != null && existingKeyType != RedisDataType.REDIS_STRING) {
       // Crap, it already exists. We need to kill it.
@@ -120,10 +134,6 @@ public class SetExecutor extends StringExecutor {
     return new ByteArrayWrapper(value);
   }
 
-  private Region getRegion(ExecutionHandlerContext context, ByteArrayWrapper key) {
-    RedisDataType redisDataType = context.getKeyRegistrar().getType(key);
-    return context.getRegionProvider().getRegionForType(redisDataType);
-  }
 
   private String parseCommandElems(List<byte[]> commandElems) {
     // Set only if exists, incompatible with EX
@@ -134,6 +144,34 @@ public class SetExecutor extends StringExecutor {
     NX = XX = EX = PX = KEEPTTL = false;
 
     expiration = 0L;
+
+//    // need to handle too many args case
+//    for (int i = 3; i < commandElems.size(); i++) {
+//      String current_arg = Coder.bytesToString(commandElems.get(i)).toUpperCase();
+//      if (current_arg == "KEEPTTL") {
+//        KEEPTTL = true;
+//        continue;
+//      } else if (current_arg == "EX") {
+//        EX = true;
+//        expiration = parseExpirationTime(current_arg, i, commandElems);
+//        continue;
+//      } else if (current_arg == "PX") {
+//        PX = true;
+//        i++;
+//        expiration = parseExpirationTime(current_arg, i, commandElems);
+//        continue;
+//      } else if (current_arg == "NX") {
+//        NX = true;
+//        continue;
+//      } else if (
+//          current_arg == "XX") {
+//        XX = true;
+//        continue;
+//      } else {
+//        return ERROR_SYNTAX;
+//      }
+//    }
+
     for (int i = 3; i < commandElems.size(); i++) {
       String current_arg = Coder.bytesToString(commandElems.get(i)).toUpperCase();
       switch (current_arg) {
@@ -213,65 +251,6 @@ public class SetExecutor extends StringExecutor {
     }
   }
 
-  private void setNX(Region<ByteArrayWrapper, ByteArrayWrapper> region, Command command,
-                     ByteArrayWrapper key, ByteArrayWrapper valueWrapper,
-                     ExecutionHandlerContext context) {
-    if (keyAlreadyExistsForDifferentDataType(context, key)) {
-      command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
-      return;
-    }
-
-    checkAndSetDataType(key, context);
-    Object oldValue = region.putIfAbsent(key, valueWrapper);
-
-    if (oldValue != null) {
-      command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
-      return;
-    }
-
-    command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
-    handleExpiration(context, key);
-  }
-
-  private void setXX(Region<ByteArrayWrapper, ByteArrayWrapper> region, Command command,
-                     ByteArrayWrapper key, ByteArrayWrapper valueWrapper,
-                     ExecutionHandlerContext context) {
-    if (region.containsKey(key) || keyAlreadyExistsForDifferentDataType(context, key)) {
-      set(command, context, region, key, valueWrapper);
-    } else {
-      command.setResponse(Coder.getNilResponse(context.getByteBufAllocator()));
-    }
-  }
-
-  private void set(Command command, ExecutionHandlerContext context,
-                   Region<ByteArrayWrapper, ByteArrayWrapper> stringsRegion, ByteArrayWrapper key,
-                   ByteArrayWrapper valueWrapper) {
-    if (keyAlreadyExistsForDifferentDataType(context, key)) {
-      removeOldValueAndDataTypeAssociation(context, key);
-    }
-    checkAndSetDataType(key, context);
-    stringsRegion.put(key, valueWrapper);
-    command.setResponse(Coder.getSimpleStringResponse(context.getByteBufAllocator(), SUCCESS));
-    handleExpiration(context, key);
-  }
-
-  private boolean keyAlreadyExistsForDifferentDataType(ExecutionHandlerContext context,
-                                                       ByteArrayWrapper key) {
-    try {
-      checkDataType(key, RedisDataType.REDIS_STRING, context);
-    } catch (RedisDataTypeMismatchException e) {
-      return true;
-    }
-
-    return false;
-  }
-
-  private void removeOldValueAndDataTypeAssociation(ExecutionHandlerContext context,
-                                                    ByteArrayWrapper key) {
-    Region oldRegion = getRegion(context, key);
-    oldRegion.remove(key);
-    context.getKeyRegistrar().unregister(key);
-  }
 
   private void handleExpiration(ExecutionHandlerContext context, ByteArrayWrapper key) {
     if (expiration > 0L) {
