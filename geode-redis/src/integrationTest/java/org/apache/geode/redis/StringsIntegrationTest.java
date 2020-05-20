@@ -930,7 +930,6 @@ public class StringsIntegrationTest {
     assertThat(jedis.get("contestedKey")).isEqualTo(Integer.toString(2 * ITERATION_COUNT));
   }
 
-  @Ignore("not looked over for current release")
   @Test
   public void testDecrBy() {
     String key1 = randString();
@@ -961,7 +960,6 @@ public class StringsIntegrationTest {
 
   }
 
-  @Ignore("not looked over for current release")
   @Test
   public void testSetNX() {
     String key1 = randString();
@@ -979,7 +977,6 @@ public class StringsIntegrationTest {
     assertThat(response3).isEqualTo(0);
   }
 
-  @Ignore("not looked over for current release")
   @Test
   public void testIncrBy() {
     String key1 = randString();
@@ -1008,7 +1005,6 @@ public class StringsIntegrationTest {
     assertThat(ex).isNotNull();
   }
 
-  @Ignore("not looked over for current release")
   @Test
   public void testPAndSetex() {
     Random r = new Random();

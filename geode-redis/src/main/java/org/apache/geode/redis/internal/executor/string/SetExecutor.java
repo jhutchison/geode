@@ -124,7 +124,7 @@ public class SetExecutor extends StringExecutor {
                                                      ByteArrayWrapper key) {
     RedisDataType existingKeyType = context.getKeyRegistrar().getType(key);
     if (existingKeyType != null && existingKeyType != RedisDataType.REDIS_STRING) {
-      // Crap, it already exists. We need to kill it.
+      // It already exists. We need to kill it.
       removeEntry(key, existingKeyType, context);
     }
   }
@@ -144,33 +144,6 @@ public class SetExecutor extends StringExecutor {
     NX = XX = EX = PX = KEEPTTL = false;
 
     expiration = 0L;
-
-//    // need to handle too many args case
-//    for (int i = 3; i < commandElems.size(); i++) {
-//      String current_arg = Coder.bytesToString(commandElems.get(i)).toUpperCase();
-//      if (current_arg == "KEEPTTL") {
-//        KEEPTTL = true;
-//        continue;
-//      } else if (current_arg == "EX") {
-//        EX = true;
-//        expiration = parseExpirationTime(current_arg, i, commandElems);
-//        continue;
-//      } else if (current_arg == "PX") {
-//        PX = true;
-//        i++;
-//        expiration = parseExpirationTime(current_arg, i, commandElems);
-//        continue;
-//      } else if (current_arg == "NX") {
-//        NX = true;
-//        continue;
-//      } else if (
-//          current_arg == "XX") {
-//        XX = true;
-//        continue;
-//      } else {
-//        return ERROR_SYNTAX;
-//      }
-//    }
 
     for (int i = 3; i < commandElems.size(); i++) {
       String current_arg = Coder.bytesToString(commandElems.get(i)).toUpperCase();

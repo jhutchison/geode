@@ -48,9 +48,7 @@ public class IncrByExecutor extends StringExecutor {
 
     ByteArrayWrapper key = command.getKey();
     checkAndSetDataType(key, context);
-    RedisString redisString = (RedisString) r.get(key);
-
-    ByteArrayWrapper valueWrapper = redisString.getValue();
+    RedisString redisStringValue = (RedisString) r.get(key);
 
     /*
      * Try increment
@@ -71,7 +69,7 @@ public class IncrByExecutor extends StringExecutor {
      * Value does not exist
      */
 
-    if (valueWrapper == null) {
+    if (redisStringValue == null) {
       r.put(key, (RedisData) new RedisString(new ByteArrayWrapper(incrArray)));
       command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), increment));
       return;
@@ -81,6 +79,7 @@ public class IncrByExecutor extends StringExecutor {
      * Value exists
      */
 
+    ByteArrayWrapper valueWrapper = redisStringValue.getValue();
     String stringValue = Coder.bytesToString(valueWrapper.toBytes());
     long value;
     try {

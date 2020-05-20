@@ -48,8 +48,7 @@ public class DecrByExecutor extends StringExecutor {
     }
     ByteArrayWrapper key = command.getKey();
     checkAndSetDataType(key, context);
-    RedisString redisString = (RedisString) r.get(key);
-    ByteArrayWrapper valueWrapper = redisString.getValue();
+    RedisString redisStringValue = (RedisString) r.get(key);
 
     /*
      * Try increment
@@ -71,7 +70,7 @@ public class DecrByExecutor extends StringExecutor {
      * Value does not exist
      */
 
-    if (valueWrapper == null) {
+    if (redisStringValue == null) {
       String negativeDecrString =
           decrString.charAt(0) == Coder.HYPHEN_ID ? decrString.substring(1) : "-" + decrString;
       r.put(key, (RedisData) new RedisString(new ByteArrayWrapper(Coder.stringToBytes(negativeDecrString))));
@@ -82,6 +81,7 @@ public class DecrByExecutor extends StringExecutor {
     /*
      * Value exists
      */
+    ByteArrayWrapper valueWrapper = redisStringValue.getValue();
 
     String stringValue = Coder.bytesToString(valueWrapper.toBytes());
 
