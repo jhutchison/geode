@@ -70,7 +70,7 @@ public class RegionProvider implements Closeable {
    * This is the {@link RedisDataType#REDIS_STRING} {@link Region}. This is the Region that stores
    * all string contents
    */
-  private final Region<ByteArrayWrapper, ByteArrayWrapper> stringsRegion;
+  private final Region<ByteArrayWrapper, RedisData> stringsRegion;
 
   /**
    * This is the {@link RedisDataType#REDIS_HLL} {@link Region}. This is the Region that stores all
@@ -92,7 +92,7 @@ public class RegionProvider implements Closeable {
   private final ConcurrentHashMap<ByteArrayWrapper, Lock> dynamicRegionLocks;
 
   @SuppressWarnings("deprecation")
-  public RegionProvider(Region<ByteArrayWrapper, ByteArrayWrapper> stringsRegion,
+  public RegionProvider(Region<ByteArrayWrapper, RedisData> stringsRegion,
       Region<ByteArrayWrapper, HyperLogLogPlus> hLLRegion,
       KeyRegistrar redisMetaRegion,
       ConcurrentMap<ByteArrayWrapper, ScheduledFuture<?>> expirationsMap,
@@ -103,7 +103,7 @@ public class RegionProvider implements Closeable {
         defaultShortcut, dataRegion, GemFireCacheImpl.getInstance());
   }
 
-  public RegionProvider(Region<ByteArrayWrapper, ByteArrayWrapper> stringsRegion,
+  public RegionProvider(Region<ByteArrayWrapper, RedisData> stringsRegion,
       Region<ByteArrayWrapper, HyperLogLogPlus> hLLRegion,
       KeyRegistrar redisMetaRegion,
       ConcurrentMap<ByteArrayWrapper, ScheduledFuture<?>> expirationsMap,
@@ -482,7 +482,7 @@ public class RegionProvider implements Closeable {
     return dynamicRegions.containsKey(key);
   }
 
-  public Region<ByteArrayWrapper, ByteArrayWrapper> getStringsRegion() {
+  public Region<ByteArrayWrapper, RedisData> getStringsRegion() {
     return stringsRegion;
   }
 

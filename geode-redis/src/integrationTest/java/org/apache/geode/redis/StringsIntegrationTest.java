@@ -118,7 +118,19 @@ public class StringsIntegrationTest {
   }
 
   @Test
-  public void testSET_shouldSetNX_evenIfKeyContainsOtherDataType() {
+  public void testSET_setNX_shouldWriteKey_WhenKeyDoesNotExist() {
+    String key = "key";
+    String stringValue = "value";
+
+    SetParams setParams = new SetParams();
+    setParams.nx();
+
+    String result = jedis.set(key, stringValue, setParams);
+    assertThat(result).isEqualTo("OK");
+  }
+
+  @Test
+  public void testSET_setNX_ShouldNotOverwriteKey_evenIfKeyContainsOtherDataType() {
     String key = "key";
     String stringValue = "value";
 
@@ -131,7 +143,19 @@ public class StringsIntegrationTest {
   }
 
   @Test
-  public void testSET_shouldSetXX_evenIfKeyContainsOtherDataType() {
+  public void testSET_setXX_shouldNotWriteKey_WhenKeyDoesNotExist() {
+    String key = "key";
+    String stringValue = "value";
+
+    SetParams setParams = new SetParams();
+    setParams.xx();
+
+    String result = jedis.set(key, stringValue, setParams);
+    assertThat(result).isNull();
+  }
+
+  @Test
+  public void testSET_setXX_shouldOverwriteKey_evenIfKeyContainsOtherDataType() {
     String key = "key";
     String stringValue = "value";
 
@@ -907,7 +931,6 @@ public class StringsIntegrationTest {
   }
 
   @Test
-  // @todo: not looked over for current release
   public void testDecrBy() {
     String key1 = randString();
     String key2 = randString();
@@ -937,7 +960,6 @@ public class StringsIntegrationTest {
 
   }
 
-  // @todo: not looked over for current release
   @Test
   public void testSetNX() {
     String key1 = randString();
@@ -955,7 +977,34 @@ public class StringsIntegrationTest {
     assertThat(response3).isEqualTo(0);
   }
 
-  // @todo: not looked over for current release
+  @Test
+  public void testIncrBy() {
+    String key1 = randString();
+    String key2 = randString();
+    String key3 = randString();
+    int incr1 = rand.nextInt(100);
+    int incr2 = rand.nextInt(100);
+    Long incr3 = Long.MAX_VALUE / 2;
+    int num1 = 100;
+    int num2 = -100;
+    jedis.set(key1, "" + num1);
+    jedis.set(key2, "" + num2);
+    jedis.set(key3, "" + Long.MAX_VALUE);
+
+    jedis.incrBy(key1, incr1);
+    jedis.incrBy(key2, incr2);
+    assertThat(jedis.get(key1)).isEqualTo("" + (num1 + incr1 * 1));
+    assertThat(jedis.get(key2)).isEqualTo("" + (num2 + incr2 * 1));
+
+    Exception ex = null;
+    try {
+      jedis.incrBy(key3, incr3);
+    } catch (Exception e) {
+      ex = e;
+    }
+    assertThat(ex).isNotNull();
+  }
+
   @Test
   public void testPAndSetex() {
     Random r = new Random();
@@ -990,35 +1039,6 @@ public class StringsIntegrationTest {
     result = jedis.get(key);
     assertThat(stop - start).isGreaterThanOrEqualTo(psetex);
     assertThat(result).isNull();
-  }
-
-  @Test
-  // @todo: not looked over for current release
-  public void testIncrBy() {
-    String key1 = randString();
-    String key2 = randString();
-    String key3 = randString();
-    int incr1 = rand.nextInt(100);
-    int incr2 = rand.nextInt(100);
-    Long incr3 = Long.MAX_VALUE / 2;
-    int num1 = 100;
-    int num2 = -100;
-    jedis.set(key1, "" + num1);
-    jedis.set(key2, "" + num2);
-    jedis.set(key3, "" + Long.MAX_VALUE);
-
-    jedis.incrBy(key1, incr1);
-    jedis.incrBy(key2, incr2);
-    assertThat(jedis.get(key1)).isEqualTo("" + (num1 + incr1 * 1));
-    assertThat(jedis.get(key2)).isEqualTo("" + (num2 + incr2 * 1));
-
-    Exception ex = null;
-    try {
-      jedis.incrBy(key3, incr3);
-    } catch (Exception e) {
-      ex = e;
-    }
-    assertThat(ex).isNotNull();
   }
 
   @Test

@@ -27,11 +27,12 @@ import org.apache.geode.cache.execute.FunctionService;
 import org.apache.geode.redis.internal.ByteArrayWrapper;
 import org.apache.geode.redis.internal.RedisCommandType;
 import org.apache.geode.redis.internal.RedisData;
-import org.apache.geode.redis.internal.RegionProvider;
+import org.apache.geode.redis.internal.RedisDataType;
 import org.apache.geode.redis.internal.executor.set.RedisSetInRegion;
 import org.apache.geode.redis.internal.executor.set.SingleResultCollector;
 import org.apache.geode.redis.internal.executor.set.StripedExecutor;
 import org.apache.geode.redis.internal.executor.set.SynchronizedStripedExecutor;
+import org.apache.geode.redis.internal.executor.string.RedisStringInRegion;
 
 @SuppressWarnings("unchecked")
 public class CommandFunction extends SingleResultRedisFunction {
@@ -39,32 +40,30 @@ public class CommandFunction extends SingleResultRedisFunction {
   public static final String ID = "REDIS_COMMAND_FUNCTION";
 
   private final transient StripedExecutor stripedExecutor;
-  private RegionProvider regionProvider;
 
-  public static void register(RegionProvider regionProvider) {
+  public static void register() {
     SynchronizedStripedExecutor stripedExecutor = new SynchronizedStripedExecutor();
-    FunctionService.registerFunction(new CommandFunction(stripedExecutor, regionProvider));
+    FunctionService.registerFunction(new CommandFunction(stripedExecutor));
   }
 
   public static <T> T execute(RedisCommandType command,
       ByteArrayWrapper key,
       Object commandArguments, Region<ByteArrayWrapper, RedisData> region) {
-    SingleResultCollector<T> rc = new SingleResultCollector<>();
+    SingleResultCollector<T> resultsCollector = new SingleResultCollector<>();
     FunctionService
         .onRegion(region)
         .withFilter(Collections.singleton(key))
         .setArguments(new Object[] {command, commandArguments})
-        .withCollector(rc)
+        .withCollector(resultsCollector)
         .execute(CommandFunction.ID)
         .getResult();
-    return rc.getResult();
+
+    return resultsCollector.getResult();
   }
 
 
-  public CommandFunction(StripedExecutor stripedExecutor,
-      RegionProvider regionProvider) {
+  public CommandFunction(StripedExecutor stripedExecutor) {
     this.stripedExecutor = stripedExecutor;
-    this.regionProvider = regionProvider;
   }
 
   @Override
@@ -77,6 +76,25 @@ public class CommandFunction extends SingleResultRedisFunction {
       RedisCommandType command, Object[] args) {
     Callable<Object> callable;
     switch (command) {
+      case APPEND: {
+        ByteArrayWrapper valueToAdd = (ByteArrayWrapper) args[1];
+        callable = () -> new RedisStringInRegion(localRegion).append(key, valueToAdd);
+        break;
+      }
+      case GET: {
+        callable = () -> new RedisStringInRegion(localRegion).get(key);
+        break;
+      }
+      case SET: {
+        ByteArrayWrapper value = (ByteArrayWrapper) args[1];
+        callable = () -> new RedisStringInRegion(localRegion).set(key, value);
+        break;
+      }
+      case SETNX: {
+        ByteArrayWrapper value = (ByteArrayWrapper) args[1];
+        callable = () -> new RedisStringInRegion(localRegion).setnx(key, value);
+        break;
+      }
       case SADD: {
         ArrayList<ByteArrayWrapper> membersToAdd = (ArrayList<ByteArrayWrapper>) args[1];
         callable = () -> new RedisSetInRegion(localRegion).sadd(key, membersToAdd);
@@ -88,10 +106,8 @@ public class CommandFunction extends SingleResultRedisFunction {
         break;
       }
       case DEL:
-        callable = () -> new RedisKeyInRegion(localRegion, regionProvider).del(key);
-        break;
-      case EXISTS:
-        callable = () -> new RedisKeyInRegion(localRegion, regionProvider).exists(key);
+        RedisDataType delType = (RedisDataType) args[1];
+        callable = executeDel(key, localRegion, delType);
         break;
       case SMEMBERS:
         callable = () -> new RedisSetInRegion(localRegion).smembers(key);
@@ -142,6 +158,19 @@ public class CommandFunction extends SingleResultRedisFunction {
         throw new UnsupportedOperationException(ID + " does not yet support " + command);
     }
     return stripedExecutor.execute(key, callable);
+  }
+
+
+  private Callable<Object> executeDel(ByteArrayWrapper key, Region localRegion,
+                                      RedisDataType delType) {
+    switch (delType) {
+      case REDIS_SET:
+        return () -> new RedisSetInRegion(localRegion).del(key);
+      case REDIS_HASH:
+        return () -> new RedisHashInRegion(localRegion).del(key);
+      default:
+        throw new UnsupportedOperationException("DEL does not support " + delType);
+    }
   }
 
 }

@@ -32,12 +32,16 @@ public abstract class SingleResultRedisFunction implements Function<Object[]> {
 
   @Override
   public void execute(FunctionContext<Object[]> context) {
+
     RegionFunctionContextImpl regionFunctionContext =
         (RegionFunctionContextImpl) context;
+
     ByteArrayWrapper key =
         (ByteArrayWrapper) regionFunctionContext.getFilter().iterator().next();
+
     Region<ByteArrayWrapper, RedisSet> localRegion =
         regionFunctionContext.getLocalDataSet(regionFunctionContext.getDataSet());
+
     Object[] args = context.getArguments();
     RedisCommandType command = (RedisCommandType) args[0];
     Object result = compute(localRegion, key, command, args);

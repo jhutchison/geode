@@ -22,6 +22,7 @@ import org.apache.geode.redis.internal.Coder;
 import org.apache.geode.redis.internal.Command;
 import org.apache.geode.redis.internal.ExecutionHandlerContext;
 import org.apache.geode.redis.internal.RedisConstants.ArityDef;
+import org.apache.geode.redis.internal.RedisData;
 
 public class SetRangeExecutor extends StringExecutor {
 
@@ -34,7 +35,7 @@ public class SetRangeExecutor extends StringExecutor {
   public void executeCommand(Command command, ExecutionHandlerContext context) {
     List<byte[]> commandElems = command.getProcessedCommand();
 
-    Region<ByteArrayWrapper, ByteArrayWrapper> r = context.getRegionProvider().getStringsRegion();
+    Region<ByteArrayWrapper, RedisData> r = context.getRegionProvider().getStringsRegion();
 
     if (commandElems.size() < 4) {
       command.setResponse(Coder.getErrorResponse(context.getByteBufAllocator(), ArityDef.SETRANGE));
@@ -43,7 +44,8 @@ public class SetRangeExecutor extends StringExecutor {
 
     ByteArrayWrapper key = command.getKey();
     checkAndSetDataType(key, context);
-    ByteArrayWrapper wrapper = r.get(key);
+    RedisString redisString = (RedisString) r.get(key);
+    ByteArrayWrapper wrapper = redisString.getValue();
 
     int offset;
     byte[] value = commandElems.get(3);
@@ -72,7 +74,7 @@ public class SetRangeExecutor extends StringExecutor {
     if (wrapper == null) {
       byte[] bytes = new byte[totalLength];
       System.arraycopy(value, 0, bytes, offset, value.length);
-      r.put(key, new ByteArrayWrapper(bytes));
+      r.put(key, (RedisData) new RedisString(new ByteArrayWrapper(bytes)));
       command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), bytes.length));
     } else {
 
@@ -80,14 +82,14 @@ public class SetRangeExecutor extends StringExecutor {
       int returnLength;
       if (totalLength < bytes.length) {
         System.arraycopy(value, 0, bytes, offset, value.length);
-        r.put(key, new ByteArrayWrapper(bytes));
+        r.put(key, (RedisData) new RedisString(new ByteArrayWrapper(bytes)));
         returnLength = bytes.length;
       } else {
         byte[] newBytes = new byte[totalLength];
         System.arraycopy(bytes, 0, newBytes, 0, bytes.length);
         System.arraycopy(value, 0, newBytes, offset, value.length);
         returnLength = newBytes.length;
-        r.put(key, new ByteArrayWrapper(newBytes));
+        r.put(key, (RedisData) new RedisString(new ByteArrayWrapper(newBytes)));
       }
 
       command.setResponse(Coder.getIntegerResponse(context.getByteBufAllocator(), returnLength));
