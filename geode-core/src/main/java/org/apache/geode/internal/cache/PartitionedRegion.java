@@ -2999,6 +2999,7 @@ public class PartitionedRegion extends LocalRegion
 
       try {
         final boolean isLocal = (this.localMaxMemory > 0) && currentTarget.equals(getMyId());
+        logger.info(primaryMoveReadLockAcquired);
         if (logger.isDebugEnabled()) {
           logger.debug("putInBucket: currentTarget = {}; ifNew = {}; ifOld = {}; isLocal = {}",
               currentTarget, ifNew, ifOld, isLocal);
