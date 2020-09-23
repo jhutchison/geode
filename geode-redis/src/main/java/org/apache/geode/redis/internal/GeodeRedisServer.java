@@ -49,27 +49,20 @@ public class GeodeRedisServer {
    * The default Redis port as specified by their protocol, {@code DEFAULT_REDIS_SERVER_PORT}
    */
   public static final int DEFAULT_REDIS_SERVER_PORT = 6379;
-
   public static final String ENABLE_REDIS_UNSUPPORTED_COMMANDS_PARAM =
       "enable-redis-unsupported-commands";
 
   private static final Logger logger = LogService.getLogger();
-
-
   private final boolean ENABLE_REDIS_UNSUPPORTED_COMMANDS =
       Boolean.getBoolean(ENABLE_REDIS_UNSUPPORTED_COMMANDS_PARAM);
 
   private final PassiveExpirationManager passiveExpirationManager;
-
   private final NettyRedisServer nettyRedisServer;
-
   private final RegionProvider regionProvider;
   private final PubSub pubSub;
   private final RedisStats redisStats;
   private final ExecutorService redisCommandExecutor;
-
   private boolean shutdown;
-
 
   /**
    * Constructor for {@code GeodeRedisServer} that will configure the server to bind to the given
@@ -93,10 +86,13 @@ public class GeodeRedisServer {
     CommandFunction.register(regionProvider.getDataRegion(), stripedExecutor, redisStats);
     RenameFunction.register(regionProvider.getDataRegion(), stripedExecutor, redisStats);
     RedisCommandFunction.register();
+
     passiveExpirationManager =
         new PassiveExpirationManager(regionProvider.getDataRegion(), redisStats);
-    redisCommandExecutor = LoggingExecutors.newCachedThreadPool("GeodeRedisServer-Command-", true);
-    nettyRedisServer = new NettyRedisServer(() -> cache.getInternalDistributedSystem().getConfig(),
+    redisCommandExecutor =
+        LoggingExecutors.newCachedThreadPool("Redis Command", true);
+    nettyRedisServer =
+        new NettyRedisServer(() -> cache.getInternalDistributedSystem().getConfig(),
         regionProvider, pubSub,
         this::allowUnsupportedCommands, this::shutdown, port, bindAddress, redisStats,
         redisCommandExecutor);
