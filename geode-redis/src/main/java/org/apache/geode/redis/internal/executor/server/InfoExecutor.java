@@ -46,7 +46,7 @@ public class InfoExecutor extends AbstractExecutor {
 
   private String getSpecifiedSection(ExecutionHandlerContext context,
       List<ByteArrayWrapper> commands) {
-    String result;
+    String result = "";
     String section = commands.get(1).toString().toLowerCase();
     switch (section) {
       case "server":
@@ -62,9 +62,9 @@ public class InfoExecutor extends AbstractExecutor {
       case "all":
         result = getAllSections(context);
         break;
-      default:
-        result = "";
-        break;
+//      default:
+//        result = "";
+//        break;
     }
     return result;
   }

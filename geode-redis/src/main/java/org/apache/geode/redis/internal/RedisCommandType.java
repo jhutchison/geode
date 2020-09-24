@@ -24,6 +24,7 @@ import org.apache.geode.redis.internal.ParameterRequirements.ExactParameterRequi
 import org.apache.geode.redis.internal.ParameterRequirements.MaximumParameterRequirements;
 import org.apache.geode.redis.internal.ParameterRequirements.MinimumParameterRequirements;
 import org.apache.geode.redis.internal.ParameterRequirements.ParameterRequirements;
+import org.apache.geode.redis.internal.ParameterRequirements.RestrictedInputValuesParameterRequirements;
 import org.apache.geode.redis.internal.ParameterRequirements.SpopParameterRequirements;
 import org.apache.geode.redis.internal.ParameterRequirements.UnspecifiedParameterRequirements;
 import org.apache.geode.redis.internal.executor.Executor;
@@ -149,11 +150,14 @@ public enum RedisCommandType {
 
   /************* Hashes *****************/
 
-  HGETALL(new HGetAllExecutor(), SUPPORTED, new ExactParameterRequirements(2)),
+  HGETALL(new HGetAllExecutor(), SUPPORTED,
+      new ExactParameterRequirements(2)),
   HMSET(new HMSetExecutor(), SUPPORTED,
-      new MinimumParameterRequirements(4).and(new EvenParameterRequirements())),
+      new MinimumParameterRequirements(4)
+          .and(new EvenParameterRequirements())),
   HSET(new HSetExecutor(), SUPPORTED,
-      new MinimumParameterRequirements(4).and(new EvenParameterRequirements())),
+      new MinimumParameterRequirements(4)
+          .and(new EvenParameterRequirements())),
 
   /************* Sets *****************/
 
@@ -258,7 +262,11 @@ public enum RedisCommandType {
   INFO(new InfoExecutor(),
       UNSUPPORTED,
       new MaximumParameterRequirements(2,
-          RedisConstants.ERROR_SYNTAX)),
+          RedisConstants.ERROR_SYNTAX)
+          .and(new RestrictedInputValuesParameterRequirements(
+            "server", "persistence", "cluster", "default", "all"
+          ))
+  ),
   SHUTDOWN(new ShutDownExecutor(), UNSUPPORTED),
   TIME(new TimeExecutor(), UNSUPPORTED),
 
