@@ -18,6 +18,7 @@ package org.apache.geode.redis.internal;
 import static org.apache.geode.redis.internal.RedisCommandSupportLevel.SUPPORTED;
 import static org.apache.geode.redis.internal.RedisCommandSupportLevel.UNIMPLEMENTED;
 import static org.apache.geode.redis.internal.RedisCommandSupportLevel.UNSUPPORTED;
+import static org.apache.geode.redis.internal.constants.RedisCommandParameters.ALLOWED_INFO_COMMANDS;
 
 import org.apache.geode.redis.internal.ParameterRequirements.EvenParameterRequirements;
 import org.apache.geode.redis.internal.ParameterRequirements.ExactParameterRequirements;
@@ -265,8 +266,8 @@ public enum RedisCommandType {
       new MaximumParameterRequirements(2,
           RedisConstants.ERROR_SYNTAX)
           .and(new RestrictedInputValuesParameterRequirements(
-              RedisConstants.ALLOWED_INFO_COMMANDS))
-  ),
+              ALLOWED_INFO_COMMANDS)
+          )),
   SHUTDOWN(new ShutDownExecutor(), UNSUPPORTED),
   TIME(new TimeExecutor(), UNSUPPORTED),
 

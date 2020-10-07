@@ -14,7 +14,6 @@
  */
 
 package org.apache.geode.redis.internal.executor.server;
-
 import java.util.List;
 
 import org.apache.geode.redis.internal.data.ByteArrayWrapper;
@@ -24,6 +23,7 @@ import org.apache.geode.redis.internal.netty.Command;
 import org.apache.geode.redis.internal.netty.ExecutionHandlerContext;
 
 public class InfoExecutor extends AbstractExecutor {
+
 
   @Override
   public RedisResponse executeCommand(Command command,
@@ -47,7 +47,9 @@ public class InfoExecutor extends AbstractExecutor {
   private String getSpecifiedSection(ExecutionHandlerContext context,
       List<ByteArrayWrapper> commands) {
     String result = "";
-    String section = commands.get(1).toString().toLowerCase();
+    String section =
+        commands.get(1).toString().toLowerCase();
+
     switch (section) {
       case "server":
         result = getServerSection(context);
@@ -62,9 +64,6 @@ public class InfoExecutor extends AbstractExecutor {
       case "all":
         result = getAllSections(context);
         break;
-//      default:
-//        result = "";
-//        break;
     }
     return result;
   }
