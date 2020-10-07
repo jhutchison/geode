@@ -18,12 +18,12 @@ package org.apache.geode.redis.internal.constants;
 import java.util.Arrays;
 import java.util.List;
 
-public  class RedisCommandParameters {
+public class RedisCommandParameters {
   public static final List<String> ALLOWED_INFO_COMMANDS =
       Arrays.asList(
-      "SERVER",
-      "CLUSTER",
-      "PERSISTENCE",
-      "DEFAULT",
-      "ALL");
+          "SERVER",
+          "CLUSTER",
+          "PERSISTENCE",
+          "DEFAULT",
+          "ALL");
 }

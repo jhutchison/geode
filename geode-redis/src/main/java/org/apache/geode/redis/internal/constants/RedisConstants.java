@@ -51,8 +51,7 @@ public class RedisConstants {
 
 
 
-
-  public static class  ArityDef{
+  public static class ArityDef {
 
     /*
      * General

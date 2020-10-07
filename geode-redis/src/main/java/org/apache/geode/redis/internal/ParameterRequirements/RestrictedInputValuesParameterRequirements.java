@@ -30,20 +30,20 @@ public class RestrictedInputValuesParameterRequirements implements ParameterRequ
 
   @Override
   public void checkParameters(Command command,
-                              ExecutionHandlerContext executionHandlerContext) {
+      ExecutionHandlerContext executionHandlerContext) {
     List<byte[]> parameters = command.getProcessedCommand();
     String commandType = command.getCommandType().name();
 
     parameters.forEach(parameter -> {
       String parameterString = parameter.toString();
       if (isNotAllowed(parameterString) &&
-          !parameterString.equalsIgnoreCase(commandType)){
+          !parameterString.equalsIgnoreCase(commandType)) {
         throw new RedisParametersMismatchException("");
       }
     });
   }
 
   private boolean isNotAllowed(String parameterString) {
-   return (allowedValues.contains(parameterString));
+    return (allowedValues.contains(parameterString));
   }
 }

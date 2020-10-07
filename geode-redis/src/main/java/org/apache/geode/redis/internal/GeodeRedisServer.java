@@ -69,9 +69,9 @@ public class GeodeRedisServer {
    * address and port.
    *
    * @param bindAddress The address to which the server will attempt to bind to; null causes it to
-   *                    bind to all local addresses.
-   * @param port        The port the server will bind to, will throw an IllegalArgumentException if
-   *                    argument is less than 0. If the port is 0 a random port is assigned.
+   *        bind to all local addresses.
+   * @param port The port the server will bind to, will throw an IllegalArgumentException if
+   *        argument is less than 0. If the port is 0 a random port is assigned.
    */
   public GeodeRedisServer(String bindAddress, int port, InternalCache cache) {
     if (ENABLE_REDIS_UNSUPPORTED_COMMANDS) {

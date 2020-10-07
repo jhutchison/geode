@@ -24,8 +24,8 @@ import static org.apache.geode.redis.internal.data.RedisSet.NULL_REDIS_SET;
 import static org.apache.geode.redis.internal.data.RedisString.NULL_REDIS_STRING;
 
 import org.apache.geode.cache.Region;
-import org.apache.geode.redis.internal.constants.RedisConstants;
 import org.apache.geode.redis.internal.RedisStats;
+import org.apache.geode.redis.internal.constants.RedisConstants;
 import org.apache.geode.redis.internal.executor.StripedExecutor;
 
 /**

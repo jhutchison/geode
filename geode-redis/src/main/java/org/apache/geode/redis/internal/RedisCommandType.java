@@ -265,9 +265,8 @@ public enum RedisCommandType {
       UNSUPPORTED,
       new MaximumParameterRequirements(2,
           RedisConstants.ERROR_SYNTAX)
-          .and(new RestrictedInputValuesParameterRequirements(
-              ALLOWED_INFO_COMMANDS)
-          )),
+              .and(new RestrictedInputValuesParameterRequirements(
+                  ALLOWED_INFO_COMMANDS))),
   SHUTDOWN(new ShutDownExecutor(), UNSUPPORTED),
   TIME(new TimeExecutor(), UNSUPPORTED),
 
