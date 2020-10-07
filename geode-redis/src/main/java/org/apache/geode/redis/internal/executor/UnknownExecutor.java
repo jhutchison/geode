@@ -15,7 +15,7 @@
  */
 package org.apache.geode.redis.internal.executor;
 
-import static org.apache.geode.redis.internal.RedisConstants.ERROR_UNKNOWN_COMMAND;
+import static org.apache.geode.redis.internal.constants.RedisConstants.ERROR_UNKNOWN_COMMAND;
 
 import java.util.Collection;
 

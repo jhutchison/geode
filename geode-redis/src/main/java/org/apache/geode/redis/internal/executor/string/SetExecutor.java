@@ -16,9 +16,9 @@ package org.apache.geode.redis.internal.executor.string;
 
 import static java.lang.Long.parseLong;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.apache.geode.redis.internal.RedisConstants.ERROR_INVALID_EXPIRE_TIME;
-import static org.apache.geode.redis.internal.RedisConstants.ERROR_NOT_INTEGER;
-import static org.apache.geode.redis.internal.RedisConstants.ERROR_SYNTAX;
+import static org.apache.geode.redis.internal.constants.RedisConstants.ERROR_INVALID_EXPIRE_TIME;
+import static org.apache.geode.redis.internal.constants.RedisConstants.ERROR_NOT_INTEGER;
+import static org.apache.geode.redis.internal.constants.RedisConstants.ERROR_SYNTAX;
 
 import java.util.Arrays;
 import java.util.List;

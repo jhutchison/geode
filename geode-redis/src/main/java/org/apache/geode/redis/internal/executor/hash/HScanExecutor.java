@@ -14,7 +14,7 @@
  */
 package org.apache.geode.redis.internal.executor.hash;
 
-import static org.apache.geode.redis.internal.RedisConstants.ERROR_ILLEGAL_GLOB;
+import static org.apache.geode.redis.internal.constants.RedisConstants.ERROR_ILLEGAL_GLOB;
 
 import java.util.List;
 import java.util.regex.Pattern;

@@ -26,7 +26,7 @@ import java.util.Objects;
 
 import org.apache.geode.DataSerializer;
 import org.apache.geode.cache.Region;
-import org.apache.geode.redis.internal.RedisConstants;
+import org.apache.geode.redis.internal.constants.RedisConstants;
 import org.apache.geode.redis.internal.delta.AppendDeltaInfo;
 import org.apache.geode.redis.internal.delta.DeltaInfo;
 import org.apache.geode.redis.internal.executor.string.SetOptions;

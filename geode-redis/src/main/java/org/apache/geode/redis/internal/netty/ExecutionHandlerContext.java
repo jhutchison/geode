@@ -45,7 +45,7 @@ import org.apache.geode.logging.internal.log4j.api.LogService;
 import org.apache.geode.redis.internal.GeodeRedisServer;
 import org.apache.geode.redis.internal.ParameterRequirements.RedisParametersMismatchException;
 import org.apache.geode.redis.internal.RedisCommandType;
-import org.apache.geode.redis.internal.RedisConstants;
+import org.apache.geode.redis.internal.constants.RedisConstants;
 import org.apache.geode.redis.internal.RedisStats;
 import org.apache.geode.redis.internal.RegionProvider;
 import org.apache.geode.redis.internal.data.RedisDataTypeMismatchException;

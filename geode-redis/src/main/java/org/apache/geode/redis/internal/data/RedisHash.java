@@ -16,8 +16,8 @@
 
 package org.apache.geode.redis.internal.data;
 
-import static org.apache.geode.redis.internal.RedisConstants.ERROR_NOT_INTEGER;
-import static org.apache.geode.redis.internal.RedisConstants.ERROR_OVERFLOW;
+import static org.apache.geode.redis.internal.constants.RedisConstants.ERROR_NOT_INTEGER;
+import static org.apache.geode.redis.internal.constants.RedisConstants.ERROR_OVERFLOW;
 
 import java.io.DataInput;
 import java.io.DataOutput;

@@ -15,7 +15,7 @@
  */
 package org.apache.geode.redis.internal.executor.key;
 
-import static org.apache.geode.redis.internal.RedisConstants.ERROR_ILLEGAL_GLOB;
+import static org.apache.geode.redis.internal.constants.RedisConstants.ERROR_ILLEGAL_GLOB;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import org.apache.geode.redis.internal.RedisConstants.ArityDef;
+import org.apache.geode.redis.internal.constants.RedisConstants.ArityDef;
 import org.apache.geode.redis.internal.executor.RedisResponse;
 import org.apache.geode.redis.internal.netty.Coder;
 import org.apache.geode.redis.internal.netty.Command;

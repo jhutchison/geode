@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.geode.redis.internal.RedisConstants;
+import org.apache.geode.redis.internal.constants.RedisConstants;
 import org.apache.geode.redis.internal.data.ByteArrayWrapper;
 import org.apache.geode.redis.internal.data.RedisDataType;
 import org.apache.geode.redis.internal.executor.RedisResponse;

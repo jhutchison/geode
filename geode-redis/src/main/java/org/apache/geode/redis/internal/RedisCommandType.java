@@ -27,6 +27,7 @@ import org.apache.geode.redis.internal.ParameterRequirements.ParameterRequiremen
 import org.apache.geode.redis.internal.ParameterRequirements.RestrictedInputValuesParameterRequirements;
 import org.apache.geode.redis.internal.ParameterRequirements.SpopParameterRequirements;
 import org.apache.geode.redis.internal.ParameterRequirements.UnspecifiedParameterRequirements;
+import org.apache.geode.redis.internal.constants.RedisConstants;
 import org.apache.geode.redis.internal.executor.Executor;
 import org.apache.geode.redis.internal.executor.RedisResponse;
 import org.apache.geode.redis.internal.executor.UnknownExecutor;

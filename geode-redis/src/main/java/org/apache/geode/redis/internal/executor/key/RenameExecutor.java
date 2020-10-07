@@ -16,7 +16,7 @@
 
 package org.apache.geode.redis.internal.executor.key;
 
-import static org.apache.geode.redis.internal.RedisConstants.ERROR_NO_SUCH_KEY;
+import static org.apache.geode.redis.internal.constants.RedisConstants.ERROR_NO_SUCH_KEY;
 
 import java.util.List;
 

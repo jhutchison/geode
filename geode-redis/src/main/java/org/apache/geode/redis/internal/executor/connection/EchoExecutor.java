@@ -17,7 +17,7 @@ package org.apache.geode.redis.internal.executor.connection;
 
 import java.util.List;
 
-import org.apache.geode.redis.internal.RedisConstants.ArityDef;
+import org.apache.geode.redis.internal.constants.RedisConstants.ArityDef;
 import org.apache.geode.redis.internal.executor.AbstractExecutor;
 import org.apache.geode.redis.internal.executor.RedisResponse;
 import org.apache.geode.redis.internal.netty.Command;

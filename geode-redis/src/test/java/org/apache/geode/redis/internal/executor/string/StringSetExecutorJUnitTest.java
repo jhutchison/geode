@@ -33,7 +33,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import org.apache.geode.cache.Region;
-import org.apache.geode.redis.internal.RedisConstants;
+import org.apache.geode.redis.internal.constants.RedisConstants;
 import org.apache.geode.redis.internal.RegionProvider;
 import org.apache.geode.redis.internal.data.ByteArrayWrapper;
 import org.apache.geode.redis.internal.data.RedisData;
