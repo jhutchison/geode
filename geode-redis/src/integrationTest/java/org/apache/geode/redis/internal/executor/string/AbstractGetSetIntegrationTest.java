@@ -15,6 +15,7 @@
 package org.apache.geode.redis.internal.executor.string;
 
 import static java.lang.Integer.parseInt;
+import static org.apache.geode.redis.internal.constants.RedisConstants.ERROR_WRONG_TYPE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -31,7 +32,6 @@ import org.junit.Test;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisDataException;
 
-import org.apache.geode.redis.internal.RedisConstants;
 import org.apache.geode.test.awaitility.GeodeAwaitility;
 import org.apache.geode.test.dunit.rules.RedisPortSupplier;
 
@@ -109,7 +109,7 @@ public abstract class AbstractGetSetIntegrationTest implements RedisPortSupplier
 
     assertThatThrownBy(() -> jedis.getSet(key, "this value doesn't matter"))
         .isInstanceOf(JedisDataException.class)
-        .hasMessageContaining(RedisConstants.ERROR_WRONG_TYPE);
+        .hasMessageContaining(ERROR_WRONG_TYPE);
   }
 
   @Test

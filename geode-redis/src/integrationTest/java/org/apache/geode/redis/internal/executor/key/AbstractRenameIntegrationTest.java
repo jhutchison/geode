@@ -15,6 +15,7 @@
 
 package org.apache.geode.redis.internal.executor.key;
 
+import static org.apache.geode.redis.internal.constants.RedisConstants.ERROR_NO_SUCH_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -39,7 +40,6 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.exceptions.JedisDataException;
 
-import org.apache.geode.redis.internal.RedisConstants;
 import org.apache.geode.redis.internal.data.ByteArrayWrapper;
 import org.apache.geode.redis.internal.executor.StripedExecutor;
 import org.apache.geode.redis.internal.executor.SynchronizedStripedExecutor;
@@ -101,7 +101,7 @@ public abstract class AbstractRenameIntegrationTest implements RedisPortSupplier
     try {
       jedis.rename("foo", "newfoo");
     } catch (JedisDataException e) {
-      assertThat(e.getMessage()).contains(RedisConstants.ERROR_NO_SUCH_KEY);
+      assertThat(e.getMessage()).contains(ERROR_NO_SUCH_KEY);
     }
   }
 
@@ -152,7 +152,7 @@ public abstract class AbstractRenameIntegrationTest implements RedisPortSupplier
       assertThat(jedis.scard("k2")).isEqualTo(numOfStrings);
       assertThat(jedis.get("k1")).isEqualTo(null);
     } catch (Exception e) {
-      assertThat(e.getMessage()).contains(RedisConstants.ERROR_NO_SUCH_KEY);
+      assertThat(e.getMessage()).contains(ERROR_NO_SUCH_KEY);
       assertThat(jedis.scard("k1")).isEqualTo(numOfStrings);
       assertThat(jedis.scard("k2")).isEqualTo(numOfStringsForSecondKey);
     }
