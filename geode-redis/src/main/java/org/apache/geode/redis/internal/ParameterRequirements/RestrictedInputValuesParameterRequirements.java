@@ -15,7 +15,6 @@
 
 package org.apache.geode.redis.internal.ParameterRequirements;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.geode.redis.internal.netty.Command;
@@ -25,12 +24,13 @@ public class RestrictedInputValuesParameterRequirements implements ParameterRequ
 
   List<String> allowedValues = null;
 
-  public RestrictedInputValuesParameterRequirements(String... allowedValues) {
-    this.allowedValues = Arrays.asList(allowedValues);
+  public RestrictedInputValuesParameterRequirements(List<String> allowedValues) {
+    this.allowedValues = allowedValues;
   }
 
   @Override
-  public void checkParameters(Command command, ExecutionHandlerContext executionHandlerContext) {
+  public void checkParameters(Command command,
+                              ExecutionHandlerContext executionHandlerContext) {
     List<byte[]> parameters = command.getProcessedCommand();
     String commandType = command.getCommandType().name();
 

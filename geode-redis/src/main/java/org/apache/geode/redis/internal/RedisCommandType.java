@@ -264,8 +264,7 @@ public enum RedisCommandType {
       new MaximumParameterRequirements(2,
           RedisConstants.ERROR_SYNTAX)
           .and(new RestrictedInputValuesParameterRequirements(
-            "server", "persistence", "cluster", "default", "all"
-          ))
+              RedisConstants.ALLOWED_INFO_COMMANDS))
   ),
   SHUTDOWN(new ShutDownExecutor(), UNSUPPORTED),
   TIME(new TimeExecutor(), UNSUPPORTED),

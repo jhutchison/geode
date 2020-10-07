@@ -15,6 +15,9 @@
 package org.apache.geode.redis.internal;
 
 
+import java.util.Arrays;
+import java.util.List;
+
 public class RedisConstants {
 
   /*
@@ -49,7 +52,15 @@ public class RedisConstants {
   public static final String ERROR_SYNTAX = "syntax error";
   public static final String ERROR_INVALID_EXPIRE_TIME = "invalid expire time in set";
 
-  public static class ArityDef {
+  public static final List<String> ALLOWED_INFO_COMMANDS = Arrays.asList(
+      "SERVER",
+      "CLUSTER",
+      "PERSISTENCE",
+      "DEFAULT",
+      "ALL");
+
+
+  public static class  ArityDef{
 
     /*
      * General
