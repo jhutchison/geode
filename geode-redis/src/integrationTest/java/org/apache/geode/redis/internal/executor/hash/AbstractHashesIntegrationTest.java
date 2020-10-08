@@ -324,7 +324,7 @@ public abstract class AbstractHashesIntegrationTest implements RedisPortSupplier
 
     assertThatThrownBy(
         () -> jedis.hscan(key, "this cursor is non-numeric and so completely invalid"))
-            .hasMessageContaining("invalid cursor");
+        .hasMessageContaining("invalid cursor");
 
     Map<String, String> hash = new HashMap<>();
     hash.put(field, value);
@@ -539,7 +539,7 @@ public abstract class AbstractHashesIntegrationTest implements RedisPortSupplier
     new ConcurrentLoopingThreads(ITERATION_COUNT,
         (i) -> jedis.hmset(key1, Maps.newHashMap("field" + i, "value" + i)),
         (i) -> jedis2.hmset(key2, Maps.newHashMap("field" + i, "value" + i)))
-            .run();
+        .run();
 
     assertThat(jedis.hgetAll(key1)).isEqualTo(expectedMap);
     assertThat(jedis2.hgetAll(key2)).isEqualTo(expectedMap);
@@ -552,7 +552,7 @@ public abstract class AbstractHashesIntegrationTest implements RedisPortSupplier
     new ConcurrentLoopingThreads(ITERATION_COUNT,
         (i) -> jedis.hmset(key, Maps.newHashMap("fieldA" + i, "valueA" + i)),
         (i) -> jedis2.hmset(key, Maps.newHashMap("fieldB" + i, "valueB" + i)))
-            .run();
+        .run();
 
     Map<String, String> result = jedis.hgetAll(key);
     assertThat(result).hasSize(ITERATION_COUNT * 2);
@@ -566,7 +566,7 @@ public abstract class AbstractHashesIntegrationTest implements RedisPortSupplier
     new ConcurrentLoopingThreads(ITERATION_COUNT,
         (i) -> successCount.addAndGet(jedis.hsetnx(key, "field" + i, "A")),
         (i) -> successCount.addAndGet(jedis2.hsetnx(key, "field" + i, "B")))
-            .run();
+        .run();
 
     assertThat(successCount.get()).isEqualTo(ITERATION_COUNT);
   }
@@ -583,7 +583,7 @@ public abstract class AbstractHashesIntegrationTest implements RedisPortSupplier
     new ConcurrentLoopingThreads(ITERATION_COUNT,
         (i) -> jedis.hset(key1, "field" + i, "value" + i),
         (i) -> jedis2.hset(key2, "field" + i, "value" + i))
-            .run();
+        .run();
 
     assertThat(jedis.hgetAll(key1)).isEqualTo(expectedMap);
     assertThat(jedis.hgetAll(key2)).isEqualTo(expectedMap);
@@ -596,7 +596,7 @@ public abstract class AbstractHashesIntegrationTest implements RedisPortSupplier
     new ConcurrentLoopingThreads(ITERATION_COUNT,
         (i) -> jedis.hset(key1, "fieldA" + i, "value" + i),
         (i) -> jedis2.hset(key1, "fieldB" + i, "value" + i))
-            .run();
+        .run();
     Map<String, String> result = jedis.hgetAll(key1);
 
     assertThat(result).hasSize(ITERATION_COUNT * 2);
@@ -612,7 +612,7 @@ public abstract class AbstractHashesIntegrationTest implements RedisPortSupplier
     new ConcurrentLoopingThreads(ITERATION_COUNT,
         (i) -> jedis.hincrBy(key, field, 1),
         (i) -> jedis2.hincrBy(key, field, 1))
-            .run();
+        .run();
 
     String value = jedis.hget(key, field);
     assertThat(value).isEqualTo(Integer.toString(ITERATION_COUNT * 2));
@@ -639,7 +639,7 @@ public abstract class AbstractHashesIntegrationTest implements RedisPortSupplier
 
     assertThatThrownBy(
         () -> jedis.hset("key", "field", "something else")).isInstanceOf(JedisDataException.class)
-            .hasMessageContaining("WRONGTYPE");
+        .hasMessageContaining("WRONGTYPE");
   }
 
   @Test
@@ -661,11 +661,52 @@ public abstract class AbstractHashesIntegrationTest implements RedisPortSupplier
             throw new RuntimeException(e);
           }
         })
-            .run();
+        .run();
 
     Map<String, String> result = jedis.hgetAll(key);
 
     assertThat(result).isEmpty();
+  }
+
+
+  @Test
+  public void testHDelReturnsNumberOfFieldsRemoved() {
+    String key = "HSET" + randString();
+    String field = "FIELD" + randString();
+    String field2 = "FIELD2" + randString();
+
+    jedis.hset(key, field, "0");
+    jedis.hset(key, field2, "300");
+
+    Long result = jedis.hdel(key, field, field2);
+
+    assertThat(result).isEqualTo(2l);
+  }
+
+  @Test
+  public void testHDelReturnsNumberDoesNotIncludeNonExistentFields() {
+    String key = "HSET" + randString();
+    String field = "FIELD" + randString();
+    String field2 = "FIELD2" + randString();
+
+    jedis.hset(key, field, "0");
+
+    Long result = jedis.hdel(key, field, field2);
+
+    assertThat(result).isEqualTo(1l);
+  }
+
+  @Test
+  public void testHDelReturnsZero_GiveNonExistentKey() {
+    String key = "HSET" + randString();
+    String field = "FIELD" + randString();
+    String field2 = "FIELD2" + randString();
+
+    jedis.hset(key, field, "0");
+
+    Long result = jedis.hdel("noneSuch", field, field2);
+
+    assertThat(result).isEqualTo(0l);
   }
 
   @Test
@@ -687,7 +728,7 @@ public abstract class AbstractHashesIntegrationTest implements RedisPortSupplier
             successCount.incrementAndGet();
           }
         })
-            .run();
+        .run();
 
     assertThat(successCount.get()).isEqualTo(ITERATION_COUNT * 2);
   }
@@ -708,7 +749,7 @@ public abstract class AbstractHashesIntegrationTest implements RedisPortSupplier
 
   @Test
   public void testHstrlen_withBinaryData() {
-    byte[] zero = new byte[] {0};
+    byte[] zero = new byte[]{0};
     jedis.hset(zero, zero, zero);
 
     assertThat(jedis.hstrlen(zero, zero)).isEqualTo(1);
