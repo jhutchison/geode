@@ -178,8 +178,14 @@ public class HashesAndCrashesDUnitTest {
     modifyDataWhileCrashingVMs(DataType.SET);
   }
 
+
+  @Test
+  public void givenServerCrashesDuringHDEL_thenDataIsNotLost() throws Exception {
+    modifyDataWhileCrashingVMs(DataType.HDEL);
+  }
+
   enum DataType {
-    HSET, SADD, SET
+    HSET, SADD, SET, HDEL
   }
 
   private void modifyDataWhileCrashingVMs(DataType dataType) throws Exception {
@@ -210,6 +216,12 @@ public class HashesAndCrashesDUnitTest {
         task2 = () -> setPerformAndVerify(1, 20000, running2);
         task3 = () -> setPerformAndVerify(3, 20000, running3);
         task4 = () -> setPerformAndVerify(4, 1000, running4);
+        break;
+        case HDEL:
+        task1 = () -> hdelPerformAndVerify(0, 20000, running1);
+        task2 = () -> hdelPerformAndVerify(1, 20000, running2);
+        task3 = () -> hdelPerformAndVerify(3, 20000, running3);
+        task4 = () -> hdelPerformAndVerify(4, 1000, running4);
         break;
     }
 
@@ -242,6 +254,35 @@ public class HashesAndCrashesDUnitTest {
     future1.get();
     future2.get();
     future3.get();
+  }
+
+  private void hdelPerformAndVerify(int index, int minimumIterations, AtomicBoolean isRunning) {
+
+    String key = "hdel-key-" + index;
+    int iterationCount = 0;
+
+    while (iterationCount < minimumIterations || isRunning.get()) {
+      String fieldName = "field-" + iterationCount;
+      try {
+        commands.hdel(key, fieldName, "value-" + iterationCount);
+        iterationCount += 1;
+      } catch (RedisCommandExecutionException ignore) {
+      } catch (RedisException ex) {
+        if (ex.getMessage().contains("Connection reset by peer")) {
+          // ignore it
+        } else {
+          throw ex;
+        }
+      }
+    }
+
+    for (int i = 0; i < iterationCount; i++) {
+      String field = "field-" + i;
+      String value = "value-" + i;
+      assertThat(commands.hget(key, field)).isEqualTo(value);
+    }
+
+    logger.info("--->>> HDEL test ran {} iterations", iterationCount);
   }
 
   private void hsetPerformAndVerify(int index, int minimumIterations, AtomicBoolean isRunning) {
